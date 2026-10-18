@@ -25,7 +25,7 @@ All output is in Vietnamese; technical terms, proper names and direct quotes sta
 
 The brief keeps the research **on target**: every researcher and the writer work from it, and step 6 measures the report against it.
 
-First list `research/`. If an earlier folder covers the same topic, read its `report.md`: this request extends it. Create a new folder, name the old one under *Kế thừa*, and aim the sub-questions only at what is new or needs re-checking.
+First list `research/` (create it if it does not exist yet). If an earlier folder covers the same topic, read its `report.md`: this request extends it. Create a new folder, name the old one under *Kế thừa*, and aim the sub-questions only at what is new or needs re-checking.
 
 Write `brief.md`:
 
@@ -43,11 +43,15 @@ Write `brief.md`:
 - **Kế thừa:** <đường dẫn report cũ, hoặc "không">
 ```
 
-Ask the user (AskUserQuestion, one round, at most 3 questions) only when an ambiguity would send the research in a different direction: a term with several meanings, an unstated region or time frame that changes the answer, or a purpose you cannot infer. Otherwise pick the most sensible reading and record it under *Phạm vi*.
+When an ambiguity would send the research in a different direction (a term with several meanings, an unstated region or time frame that changes the answer, a purpose or depth you cannot infer), invoke the `grill-me` skill (Skill tool) **before** writing the brief, with args:
+`Called by research. Settle: <open brief fields, by their brief names: Mục đích, Phạm vi, Độ sâu…>. Known so far: <one line of what the request already says>`.
+Fold the *Bản chốt* it returns into the brief: each settled point goes to the brief field of the same name, *Kết quả mong muốn* joins *Mục đích*, *Ràng buộc* joins *Phạm vi*, and assumptions are recorded under *Phạm vi*. When the request is already clear, skip it: pick the most sensible reading and record it under *Phạm vi*.
 
 Done when each sub-question is specific enough that a researcher can tell when it is answered.
 
 ## 2. Choose depth
+
+If the user already set *Độ sâu* (directly or through `grill-me`), keep it. Otherwise:
 
 - **Nhanh**: a single factual question, or the user asks for something quick. Do the research yourself following `{skill}/references/researcher.md` and `{skill}/references/sources.md`, then write `report.md` with the template in `{skill}/references/writer.md`. Skip steps 3–6.
 - **Sâu** (default): split the sub-questions into **angles**, which are independent slices that do not overlap. Three is a good default. Use up to six for wide topics (many entities, regions or competing schools of thought). Typical angles: primary/official sources, academic research, practice and case studies, data and numbers, and Vietnamese context when relevant. When the topic has a contested claim, add a **phản biện** (counter-evidence) angle whose job is to find counter-evidence and criticism.

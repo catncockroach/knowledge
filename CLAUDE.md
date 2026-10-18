@@ -14,7 +14,7 @@ Khi được yêu cầu research một đề tài hay câu hỏi, dùng skill `r
 
 ## Skill của repo
 
-Mỗi skill nằm ở `.claude/skills/<name>/`. Field `description` phải mở đầu bằng `catncockroach - ` để phân biệt với skill builtin. Tạo hoặc sửa skill bằng skill `skill-building` (không dùng `skill-creator` builtin, trừ khi cần chạy eval/benchmark). Kiểm tra mọi skill bằng lệnh:
+Mỗi skill nằm ở `.claude/skills/<name>/`. Field `description` phải mở đầu bằng `catncockroach - ` để phân biệt với skill builtin. Skill nào cần làm rõ yêu cầu với người dùng thì gọi skill `grill-me` ở chế độ Called, không tự viết lại cách hỏi. Tạo hoặc sửa skill bằng skill `skill-building` (không dùng `skill-creator` builtin, trừ khi cần chạy eval/benchmark). Kiểm tra mọi skill bằng lệnh:
 
 ```bash
 python3 .claude/skills/skill-building/scripts/validate.py .claude/skills/*/
