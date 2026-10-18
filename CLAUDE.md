@@ -8,6 +8,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Chủ repo viết bằng tiếng Việt. Mặc định trả lời và ghi chú bằng tiếng Việt, trừ khi được yêu cầu khác.
 
-## Trạng thái hiện tại
+## Research
 
-Repo mới được khởi tạo và còn trống. Chưa có quy ước nào về cấu trúc thư mục, định dạng ghi chú, cách đặt tên file hay cách liên kết giữa các ghi chú. Trước khi tự đặt ra một cấu trúc mới, hãy hỏi chủ repo. Khi đã có quy ước, cập nhật file này.
+Khi được yêu cầu research một đề tài hay câu hỏi, dùng skill `research` của repo (`.claude/skills/research/`), không dùng `deep-research` builtin. Mỗi lần research nằm trong một thư mục `research/<YYYY-MM-DD>-<slug>/`, gồm `brief.md`, `notes/` và `report.md`. Trước khi research một chủ đề, xem `research/` để kế thừa các báo cáo cũ cùng chủ đề.
+
+## Skill của repo
+
+Mỗi skill nằm ở `.claude/skills/<name>/`. Field `description` phải mở đầu bằng `catncockroach - ` để phân biệt với skill builtin. Tạo hoặc sửa skill bằng skill `skill-building` (không dùng `skill-creator` builtin, trừ khi cần chạy eval/benchmark). Kiểm tra mọi skill bằng lệnh:
+
+```bash
+python3 .claude/skills/skill-building/scripts/validate.py .claude/skills/*/
+```
+
+## Quy ước còn để ngỏ
+
+Ngoài `research/`, chưa có quy ước về cấu trúc thư mục, định dạng ghi chú hay cách liên kết giữa các ghi chú. Hỏi chủ repo trước khi tự đặt ra cấu trúc mới.
