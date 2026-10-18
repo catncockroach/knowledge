@@ -22,7 +22,11 @@ def main() -> int:
     if not files:
         errors.append("no topic files besides README.md")
     text = readme.read_text(encoding="utf-8")
-    linked = {Path(m).name for m in LINK.findall(text) if m.endswith(".md")}
+    linked = {
+        Path(m).name
+        for m in LINK.findall(text)
+        if m.endswith(".md") and (readme.parent / m).resolve().parent == root.resolve()
+    }
     for p in files:
         if not NAME.match(p.name):
             errors.append(f"{p.name}: not English kebab-case (optionally NN- prefix)")
