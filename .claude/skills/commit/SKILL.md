@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "catncockroach - Creates git commits in this repo's house style: a brief, all-lowercase `scope: detail` subject, a few `- ` bullet lines describing the change, and a Co-Authored-By trailer for the agent. Use whenever you are about to run git commit in this repo: the user says commit, commit đi, tạo commit, lưu thay đổi, or a task ends with committing, even if they don't mention the message format. Not for push, pull requests, or rewriting history."
+description: "catncockroach - Creates git commits in this repo's house style: an all-lowercase `brief title: detail` subject, a few `- ` bullet lines describing the change, and a Co-Authored-By trailer for the agent. Use whenever you are about to run git commit in this repo: the user says commit, commit đi, tạo commit, lưu thay đổi, or a task ends with committing, even if they don't mention the message format. Not for push, pull requests, or rewriting history."
 argument-hint: "[gợi ý nội dung commit]"
 allowed-tools: Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *)
 ---
@@ -10,7 +10,7 @@ allowed-tools: Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add 
 Commit only what the user asked to commit, with a **brief**, **lowercase** message in exactly this shape:
 
 ```
-<scope>: <detail>
+<brief title>: <detail>
 
 - <what changed>
 - <what changed>
@@ -21,9 +21,9 @@ Co-Authored-By: <agent trailer>
 ## Message rules
 
 - **Lowercase everything** you write: subject, bullets, file and folder names (`update claude.md`, not `update CLAUDE.md`). The owner wants no capitals at all. The trailer is the one exception (see below).
-- **Subject**: `<scope>: <detail>`, at most ~50 chars, imperative, no trailing period.
-  - `scope` is the brief title: the area touched, usually a top-level folder or a skill name (`skill`, `research`, `internet`, `readme`, `repo`). Several areas → the one that matters most, or `repo`.
-  - `detail` says what the commit does, in a few words (`add commit skill`, `fix broken links in dns notes`).
+- **Subject**: `<brief title>: <detail>`, no trailing period.
+  - `brief title` is free-form: a few words (often 1–4) naming what the commit is about, phrased however reads best. It is not a fixed scope list: `more agent's skill`, `dns notes`, `networking foundations`, `research reports` are all fine.
+  - `detail` says what the commit does, in a few words (`grilling`, `add commit skill`, `fix broken links`).
 - **Bullets**: 1–4 lines starting with `- `, each one concrete change, at most ~72 chars. Say *what* and, when not obvious, *why*. Skip filler like "update files".
 - **Language**: English, even though notes in the repo are Vietnamese. Vietnamese proper nouns or quoted titles may stay as they are, lowercased.
 - **Trailer**: copy the `Co-Authored-By:` line from the commit attribution in your system context verbatim (it names the current model, so do not hard-code it). If there is none, use `Co-Authored-By: Claude <noreply@anthropic.com>`. Keep its capitalisation, since git and GitHub parse the trailer by that exact key.
@@ -31,7 +31,7 @@ Co-Authored-By: <agent trailer>
 Examples:
 
 ```
-skill: add commit skill
+agent skills: add commit
 
 - add .claude/skills/commit with the message format rules
 - note the commit convention in claude.md
@@ -40,7 +40,7 @@ Co-Authored-By: <attribution line from your context>
 ```
 
 ```
-internet: fix typos in dns notes
+dns notes: fix ttl typo
 
 - correct ttl explanation in 03-dns.md
 
@@ -76,7 +76,7 @@ Write the message by the rules above, then commit through a heredoc so the layou
 
 ```bash
 git commit -F - <<'EOF'
-scope: detail
+brief title: detail
 
 - change one
 - change two
