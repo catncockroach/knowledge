@@ -18,7 +18,7 @@ Khi được yêu cầu viết kiến thức cơ sở, cốt lõi hay nền tả
 
 ## Commit
 
-Mỗi khi tạo commit, dùng skill `commit`: subject `brief title: detail` viết thường toàn bộ (brief title tự do, vài từ), vài dòng `- ` mô tả, kết thúc bằng trailer `Co-Authored-By` của agent. Chỉ commit khi chủ repo yêu cầu, không tự push.
+Mỗi khi tạo commit, dùng skill `commit`: subject `brief title: detail` viết thường toàn bộ (brief title tự do, vài từ), vài dòng `- ` mô tả, kết thúc bằng trailer `Co-Authored-By` của agent và không có trailer nào khác (không `Claude-Session`, không link session). Chỉ commit khi chủ repo yêu cầu, không tự push.
 
 ## Skill của repo
 

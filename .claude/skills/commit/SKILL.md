@@ -27,6 +27,7 @@ Co-Authored-By: <agent trailer>
 - **Bullets**: 1–4 lines starting with `- `, each one concrete change, at most ~72 chars. Say *what* and, when not obvious, *why*. Skip filler like "update files".
 - **Language**: English, even though notes in the repo are Vietnamese. Vietnamese proper nouns or quoted titles may stay as they are, lowercased.
 - **Trailer**: copy the `Co-Authored-By:` line from the commit attribution in your system context verbatim (it names the current model, so do not hard-code it). If there is none, use `Co-Authored-By: Claude <noreply@anthropic.com>`. Keep its capitalisation, since git and GitHub parse the trailer by that exact key.
+- **Only that one trailer.** The message ends on the `Co-Authored-By:` line. Drop every other trailer or link the attribution suggests, such as `Claude-Session:` or a claude.ai session URL: they point to the owner's private session and do not belong in the repo history. The repo's `CLAUDE.md` sets the same rule, and the attribution text itself yields to the owner's instructions, so this rule wins.
 
 Examples:
 
@@ -87,7 +88,7 @@ EOF
 
 If a hook rejects the commit, fix the cause, re-stage and make a **new** commit. Keep hooks on (no `--no-verify`) and leave earlier commits as they are (no `--amend`) unless the user asks.
 
-Done when `git log -1 --format=%B` prints a message that follows every rule above: re-read it against them, letter case included.
+Done when `git log -1 --format=%B` prints a message that follows every rule above: re-read it against them, letter case included, and check that its last line is the `Co-Authored-By:` line with no other trailer.
 
 ## 4. Report
 
