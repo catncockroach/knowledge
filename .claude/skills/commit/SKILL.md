@@ -1,13 +1,13 @@
 ---
 name: commit
-description: "catncockroach - Creates git commits in this repo's house style: an all-lowercase `brief title: detail` subject, a few `- ` bullet lines describing the change, and a Co-Authored-By trailer for the agent. Use whenever you are about to run git commit in this repo: the user says commit, commit đi, tạo commit, lưu thay đổi, or a task ends with committing, even if they don't mention the message format. Not for push, pull requests, or rewriting history."
+description: "catncockroach - Creates git commits in this repo's house style (an all-lowercase `brief title: detail` subject, a few `- ` bullet lines, a single Co-Authored-By trailer), then pushes the branch and opens or updates its pull request without asking. Use whenever a task in this repo has changed files and is done, or the user says commit, commit đi, tạo commit, lưu thay đổi, push, tạo pr, even if they don't mention the message format. Never merges a pull request; not for rewriting history."
 argument-hint: "[gợi ý nội dung commit]"
-allowed-tools: Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *)
+allowed-tools: Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *) Bash(git fetch *) Bash(git checkout *) Bash(git stash *) Bash(git push *)
 ---
 
 # Commit
 
-Commit only what the user asked to commit, with a **brief**, **lowercase** message in exactly this shape:
+The owner wants finished work committed, pushed and opened as a pull request **without being asked**; never merge it, the owner merges. Commit only the changes that belong to the task, with a **brief**, **lowercase** message in exactly this shape:
 
 ```
 <brief title>: <detail>
@@ -61,7 +61,14 @@ Run `git diff --staged` and `git diff` (plus `git status` if the state above is 
 
 Done when you can say in one line what each changed path is about.
 
-## 2. Pick what goes in
+## 2. Pick the branch and what goes in
+
+Before staging, make sure the commit lands on a branch whose PR can still take it. Look up the branch's PR state with the GitHub tool (list PRs whose head is this branch, any state):
+- On the default branch (`main`) → create a branch first. If the session or environment names a branch to work on, use that one; otherwise `git checkout -b claude/<short-topic-slug>`.
+- The branch's earlier PR is already **merged** → restart the branch from the latest default branch, keeping the working tree: `git fetch origin main && git checkout -B <branch> origin/main`. A merged PR cannot take new commits. If checkout refuses because `main` changed the same files, `git stash`, checkout, then `git stash pop` and resolve.
+- The branch has an **open** PR → commit on it; the push in step 4 updates that PR.
+
+Then pick the changes:
 
 - Something already staged → commit exactly the staged set and leave the rest alone. If the staged set holds changes outside what the user asked for, ask before committing them.
 - Nothing staged → stage the changes that belong to what the user asked for, by path (`git add <path>...`). Use `git add -A` only when every change belongs.
@@ -90,6 +97,17 @@ If a hook rejects the commit, fix the cause, re-stage and make a **new** commit.
 
 Done when `git log -1 --format=%B` prints a message that follows every rule above: re-read it against them, letter case included, and check that its last line is the `Co-Authored-By:` line with no other trailer.
 
-## 4. Report
+## 4. Push and open the PR
 
-Tell the user, in Vietnamese, the short hash and subject of each commit, plus anything you left out and why. Do not push.
+1. Push: `git push -u origin <branch>`. Only if that is rejected as non-fast-forward because the branch was restarted from `main` in step 2 (the remote holds only already-merged commits), retry with `git push -u --force-with-lease origin <branch>`. Never force-push otherwise, and never push to `main` directly.
+2. PR, with whatever GitHub tool the session has (the GitHub MCP `create_pull_request`/`update_pull_request`, or `gh pr create`):
+   - No PR for this branch yet → open one against `main`. If the repo has a PR template, follow its layout. Title: the commit subject (or a summary subject when several commits). Body in normal-case Vietnamese: what changed, and how it was checked (validator or `check.py` runs, recomputed numbers, links checked), in a few bullets.
+   - An open PR already exists → the push updated it. If its scope grew, update the title and body to cover every commit.
+   - The body carries no session links or `claude.ai/code/session` URLs, for the same reason as the trailer rule. Keep a plain `🤖 Generated with [Claude Code](https://claude.com/claude-code)` line if the attribution asks for one.
+3. Do **not** merge, approve or enable auto-merge, even when the PR is green.
+
+Done when the push succeeded and you have the PR URL.
+
+## 5. Report
+
+Tell the user, in Vietnamese, the short hash and subject of each commit, the PR link (new or updated), and anything you left out and why.
