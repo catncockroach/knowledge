@@ -9,7 +9,7 @@ tags: [detection-engineering, false-positive, siem, llm, ioc, soc]
 
 > **Câu hỏi:** Tuning detection rule (đặc biệt rule IoC) để giảm FP diễn ra thế nào, cần đảm bảo gì và bằng cách nào, và LLM nên vào quy trình ở đâu, theo kiến trúc nào để đề xuất thay đổi rule an toàn, kiểm chứng được? · **Ngày:** 2026-10-18 · **Phạm vi:** thực hành và tài liệu 2018–2026 (phần LLM ưu tiên 2023–2026); không gắn vendor, minh họa bằng Microsoft Sentinel, Splunk ES, Elastic, Google SecOps, QRadar và định dạng mở Sigma/KQL/SPL/YARA-L. · **Kiểm chứng:** 86 khẳng định đã đối chiếu nguồn, 20 đã sửa
 
-> **Cập nhật 2026-10-20:** analyst gắn verdict ở mức **case**, còn một case có thể chứa alert của nhiều rule; nhãn alert thường không có hoặc chỉ được copy từ case, và một phần nhãn đóng là do SOAR/chính sách đặt. Vì vậy đầu vào của pipeline tuning phải là bảng case↔alert↔rule có ghi nguồn gốc nhãn, không phải danh sách case FP. Chi tiết và danh sách 13 điểm cần sửa ở [report case/SOAR ngày 2026-10-20](../2026-10-20-ha-tang-quy-trinh-case-soc/report.md) (mục "Cập nhật cho report tuning cũ"). Report này đã áp cả 13 điểm đó (sơ đồ domain, bảng thuật ngữ và bảng map nền tảng, quy trình gán nhãn, tuning insights, pipeline, dữ liệu đầu vào, metric, rủi ro, lộ trình); các chỗ sửa dẫn về report case/SOAR thay vì thêm nguồn mới vào danh sách bên dưới.
+> **Cập nhật 2026-10-20:** analyst gắn verdict ở mức **case**, còn một case có thể chứa alert của nhiều rule; nhãn alert thường không có hoặc chỉ được copy từ case, và một phần nhãn đóng là do SOAR/chính sách đặt. Vì vậy đầu vào của pipeline tuning phải là bảng case↔alert↔rule có ghi nguồn gốc nhãn, không phải danh sách case FP. Chi tiết và danh sách 13 điểm cần sửa ở [report case/SOAR ngày 2026-10-20](../2026-10-20-ha-tang-quy-trinh-case-soc/report.md) (mục "Cập nhật cho report tuning cũ"). Report này đã áp cả 13 điểm đó: bảng thuật ngữ và bảng map nền tảng, quy trình gán nhãn, tuning insights, pipeline, dữ liệu đầu vào, metric, rủi ro, lộ trình. Riêng sơ đồ domain chỉ sửa BTP thành BP và giữ dạng đơn giản; tầng trước case, đóng lẻ alert và đồng bộ ITSM xem ở sơ đồ của report case/SOAR. Các chỗ sửa dẫn về report case/SOAR thay vì thêm nguồn mới vào danh sách bên dưới.
 
 ## Tóm tắt
 
@@ -30,19 +30,20 @@ Mọi nền tảng an ninh enterprise lớn mô tả cùng một dây chuyền. 
 
 ```mermaid
 flowchart LR
-  SRC["Nguồn: EDR, NDR, firewall,<br/>DNS, identity, cloud / SaaS"] -->|"agent, syslog,<br/>API"| ING[Thu thập & parse]
+  subgraph Sources[Nguồn telemetry]
+    EP[Endpoint / EDR] --- NET["Network / NDR<br/>firewall, proxy, DNS"]
+    NET --- ID["Identity<br/>AD, Entra, Okta"]
+    ID --- CLOUD["Cloud / SaaS<br/>audit log"]
+  end
+  Sources -->|"agent, syslog,<br/>API"| ING[Thu thập & parse]
   ING -->|"chuẩn hóa: UDM, ECS,<br/>OCSF, CIM, ASIM"| STORE[("SIEM index /<br/>security data lake")]
   TIP["TIP / threat intel<br/>feed: IoC"] -->|"indicator match,<br/>enrich"| DET
   STORE --> DET["Detection engine: rule<br/>KQL, SPL, YARA-L…, ML"]
-  DET -->|"alert / finding<br/>/ offense"| PRE{"Tầng trước case:<br/>suppression, dedup"}
-  PRE -->|bị lọc| DROP["Alert không vào case:<br/>không bao giờ có nhãn"]
-  PRE --> CASE["Case / Incident: máy gom<br/>alert, có trần, move / merge"]
+  DET -->|"alert / notable<br/>/ offense"| CASE["Case / Incident: gom alert<br/>theo entity, thời gian"]
   CASE --> SOAR["SOAR: automation<br/>rule, playbook"]
   SOAR -->|"enrich, block,<br/>isolate, ticket"| RESP[Response]
   CASE --> AN["Analyst L1 → L2 → L3:<br/>triage, điều tra"]
   AN -->|"đóng case +<br/>verdict TP / BP / FP"| FB[Feedback]
-  AN -.->|"đóng lẻ alert nhiễu,<br/>nếu nền tảng cho phép"| FB
-  CASE <-->|"đồng bộ<br/>trạng thái"| ITSM["ITSM / portal khách:<br/>ServiceNow, Jira"]
   FB -->|"tuning: exclusion,<br/>sửa logic, đổi severity"| DET
   FB -->|"IoC sai:<br/>gỡ / hạ điểm"| TIP
 ```
