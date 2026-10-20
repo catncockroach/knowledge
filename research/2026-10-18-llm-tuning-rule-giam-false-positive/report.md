@@ -30,26 +30,21 @@ Mọi nền tảng an ninh enterprise lớn mô tả cùng một dây chuyền. 
 
 ```mermaid
 flowchart LR
-  subgraph Sources[Nguồn telemetry]
-    EP[Endpoint / EDR] --- NET[Network / NDR, firewall, proxy, DNS]
-    NET --- ID[Identity: AD, Entra, Okta]
-    ID --- CLOUD[Cloud / SaaS audit log]
-  end
-  Sources -->|agent, syslog, API| ING[Thu thập & parse]
-  ING -->|chuẩn hóa: UDM / ECS / OCSF / CIM / ASIM| STORE[(SIEM index / security data lake)]
-  TIP[TIP / threat intel feed: IoC] -->|indicator match, enrich| DET
-  STORE --> DET[Detection engine: rule KQL/SPL/YARA-L/EQL/Sigma, ML/UEBA]
-  DET -->|alert / finding / offense| PRE{Tầng trước case: suppression, pre-process drop, dedup}
-  PRE -->|bị lọc| DROP[Alert không vào case: không bao giờ có nhãn]
-  PRE --> CASE[Case / Incident: máy gom alert theo luật gom, có trần; move / merge]
-  CASE --> SOAR[SOAR: automation rule, playbook]
-  SOAR -->|enrich, block, isolate, ticket| RESP[Response]
-  CASE --> AN[Analyst L1 → L2 → L3: triage, điều tra]
-  AN -->|đóng case + verdict TP / BP / FP| FB[Feedback]
-  AN -.->|đóng lẻ alert nhiễu, nếu nền tảng cho phép| FB
-  CASE <-->|đồng bộ trạng thái| ITSM[ITSM / portal khách: ServiceNow, Jira]
-  FB -->|tuning: exclusion, sửa logic, đổi severity| DET
-  FB -->|IoC sai: gỡ / hạ điểm| TIP
+  SRC["Nguồn: EDR, NDR, firewall,<br/>DNS, identity, cloud / SaaS"] -->|"agent, syslog,<br/>API"| ING[Thu thập & parse]
+  ING -->|"chuẩn hóa: UDM, ECS,<br/>OCSF, CIM, ASIM"| STORE[("SIEM index /<br/>security data lake")]
+  TIP["TIP / threat intel<br/>feed: IoC"] -->|"indicator match,<br/>enrich"| DET
+  STORE --> DET["Detection engine: rule<br/>KQL, SPL, YARA-L…, ML"]
+  DET -->|"alert / finding<br/>/ offense"| PRE{"Tầng trước case:<br/>suppression, dedup"}
+  PRE -->|bị lọc| DROP["Alert không vào case:<br/>không bao giờ có nhãn"]
+  PRE --> CASE["Case / Incident: máy gom<br/>alert, có trần, move / merge"]
+  CASE --> SOAR["SOAR: automation<br/>rule, playbook"]
+  SOAR -->|"enrich, block,<br/>isolate, ticket"| RESP[Response]
+  CASE --> AN["Analyst L1 → L2 → L3:<br/>triage, điều tra"]
+  AN -->|"đóng case +<br/>verdict TP / BP / FP"| FB[Feedback]
+  AN -.->|"đóng lẻ alert nhiễu,<br/>nếu nền tảng cho phép"| FB
+  CASE <-->|"đồng bộ<br/>trạng thái"| ITSM["ITSM / portal khách:<br/>ServiceNow, Jira"]
+  FB -->|"tuning: exclusion,<br/>sửa logic, đổi severity"| DET
+  FB -->|"IoC sai:<br/>gỡ / hạ điểm"| TIP
 ```
 
 Các thành phần trong sơ đồ có vai trò khác nhau. **SIEM** là kho log tập trung kèm engine chạy rule. **EDR** (endpoint) và **NDR** (network) là sensor có detection riêng, đồng thời là nguồn alert đổ vào SIEM. **XDR** là sản phẩm của một vendor hợp nhất nhiều sensor: theo trang định nghĩa thị trường của Gartner Peer Insights, XDR phải có analytics/correlation, workspace điều tra, response tự động native, ít nhất hai sensor native (một trong đó là endpoint) và khả năng ingest log [24]. **SOAR** là lớp workflow chạy trên case. **TIP** (threat intelligence platform) quản lý IoC và đẩy chúng xuống rule. Sentinel chẳng hạn cho analyst đánh dấu IP, URL, domain hay hash trong incident là IoC rồi "Add to TI" [25]. Elastic có hẳn loại rule *Indicator match* đối chiếu field của event với index threat intel, và "Alerts are enriched with indicator metadata" [26]. **UEBA** là analytics hành vi trên user/entity; Elastic hiện thực nó qua rule *Machine learning* (anomaly detection) và rule *New terms* (bắn khi gặp giá trị chưa từng thấy trong cửa sổ lịch sử) [26]. **Nhận định:** ranh giới giữa các nhãn sản phẩm này ngày càng mờ, vì Sentinel, Google SecOps và Splunk ES đều đã gộp SIEM, SOAR và UEBA vào một nền tảng.
