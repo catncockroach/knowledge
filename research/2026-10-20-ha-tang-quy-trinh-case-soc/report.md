@@ -133,7 +133,7 @@ Hai điểm đặc thù cần lưu ý khi lấy dữ liệu lịch sử. Tích h
 
 ## Cập nhật cho report tuning cũ
 
-Bảng dưới liệt kê các chỗ cụ thể trong [report 2026-10-18](../2026-10-18-llm-tuning-rule-giam-false-positive/report.md) nên sửa, theo thứ tự xuất hiện trong report cũ.
+Bảng dưới liệt kê các chỗ cụ thể trong [report 2026-10-18](../2026-10-18-llm-tuning-rule-giam-false-positive/report.md) nên sửa, theo thứ tự xuất hiện trong report cũ. Cả 13 điểm đã được áp vào report cũ ngày 2026-10-20.
 
 | # | Vị trí trong report cũ | Hiện ghi | Sửa thành | Căn cứ |
 |---|---|---|---|---|
