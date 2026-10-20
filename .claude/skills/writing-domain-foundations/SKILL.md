@@ -53,11 +53,11 @@ Use the template in [references/readme-template.md](references/readme-template.m
 ## 5. Validate
 
 ```bash
-python3 /home/haihv/projects/knowledge/.claude/skills/writing-domain-foundations/scripts/check.py <domain>
+python3 ${CLAUDE_SKILL_DIR}/scripts/check.py <domain>
 ```
 
 It checks that every `.md` file is listed in the README and vice versa, that file names are English kebab-case, and that relative links resolve. Fix every error and re-run until it exits 0.
 
 ## 6. Deliver
 
-Tell the user in Vietnamese: the domain folder, the file list with meanings, and any facts you left out because you could not verify them. Do not commit unless asked.
+Tell the user in Vietnamese: the domain folder, the file list with meanings, and any facts you left out because you could not verify them. Then commit, push and open the PR with the `commit` skill, and include the PR link.
