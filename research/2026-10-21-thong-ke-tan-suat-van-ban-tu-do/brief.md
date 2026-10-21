@@ -1,0 +1,16 @@
+# Brief: Làm sao thống kê tần suất có ý nghĩa trên một cột văn bản tự do mà gần như mỗi giá trị đều khác nhau?
+
+- **Ngày:** 2026-10-21
+- **Câu hỏi chính:** Với một cột văn bản ngắn (vài từ đến vài câu) trong tập dữ liệu dạng bảng, vừa có giá trị do máy sinh theo mẫu có tham số (vd "đã khóa tài khoản user123", "đã chặn IP 10.0.0.5"), vừa có giá trị do người nhập tay với cách diễn đạt rất đa dạng (tiếng Việt, có thể lẫn tiếng Anh, viết tắt, sai chính tả), nên chuẩn hóa và gom nhóm bằng phương pháp nào để mỗi nhóm là một "lý do/ý nghĩa" và phân phối tần suất theo nhóm có giá trị thống kê, trong khi giữ latency và chi phí thấp nếu dùng LLM?
+- **Mục đích:** Chọn và thiết kế một pipeline thực tế (chuẩn hóa → gom nhóm → gán nhãn nhóm → đếm, có thể cắt theo một cột phân loại khác như "nguồn" hay "loại bản ghi") để tìm ra các lý do xuất hiện nhiều nhất; biết đánh đổi chất lượng/latency/chi phí của từng lựa chọn và cách kiểm chứng kết quả.
+- **Câu hỏi phụ:**
+  1. Với phần do máy sinh: các kỹ thuật trích template và che tham số (regex masking, log parsing kiểu Drain/Spell/LogMine/Drain3, LLM-based parsing có cache) hoạt động thế nào, chính xác ra sao trên benchmark, tốc độ thế nào; cách phát hiện một giá trị là "máy sinh" hay "người viết"?
+  2. Với phần do người viết: các cách gom theo nghĩa cho văn bản ngắn (near-duplicate MinHash/SimHash/TF-IDF char n-gram, sentence embedding + HDBSCAN/agglomerative/k-means, BERTopic, short-text topic model như GSDMM/BTM); model embedding nào dùng tốt cho tiếng Việt (đa ngữ hoặc chuyên tiếng Việt), và tiền xử lý tiếng Việt cần gì?
+  3. LLM dùng ở đâu cho đáng: sinh taxonomy (vd TnT-LLM, Clio), LLM-assisted clustering (ClusterLLM, few-shot clustering, k-LLMmeans…), đặt tên cụm, phân loại vào taxonomy; số lần gọi, latency, chi phí của từng kiểu; cách giảm (gọi theo cụm/template thay vì theo dòng, cache, batch, distill sang classifier nhỏ/SetFit, model local).
+  4. Với dữ liệu mới đến liên tục: gán bản ghi mới vào nhóm có sẵn thế nào (nearest centroid, classifier, cache theo template), xử lý nhóm mới xuất hiện và drift taxonomy?
+  5. Làm sao biết kết quả gom nhóm đủ tốt để tin con số tần suất: metric nội tại (silhouette, DBCV), đối chiếu với nhãn người (ARI/NMI, mẫu kiểm tra), tỷ lệ "khác/không xếp được", độ ổn định giữa các lần chạy; cách trình bày phân phối (Pareto, phân cấp nhóm, khoảng tin cậy)?
+  6. Thực tiễn ngành: các case study công khai về phân loại/gom nhóm văn bản tự do ngắn (lý do hủy, ticket hỗ trợ, phản hồi khách hàng, ghi chú xử lý), và vai trò của việc thiết kế lại form nhập (mã lý do có cấu trúc + ghi chú tự do) như giải pháp phòng ngừa song song.
+- **Phạm vi:** Phương pháp và công cụ công khai, ưu tiên 2019–2026 (phần LLM 2023–2026). Giả định: tập dữ liệu cỡ vài nghìn đến vài triệu dòng; phân tích chủ yếu dạng batch/định kỳ nhưng muốn gần real-time; dữ liệu có thể nhạy cảm nên ưu tiên phương án chạy được on-prem/model local, nhưng vẫn so sánh với API. Ngôn ngữ chính tiếng Việt, có lẫn tiếng Anh.
+- **Ngoài phạm vi:** Bối cảnh nghiệp vụ cụ thể của người hỏi (report viết cho bài toán chung, ví dụ trung tính như lý do đóng ticket/hủy đơn/ghi chú xử lý); văn bản dài (tài liệu, bài báo); sentiment analysis; huấn luyện model từ đầu.
+- **Độ sâu:** sâu
+- **Kế thừa:** không
