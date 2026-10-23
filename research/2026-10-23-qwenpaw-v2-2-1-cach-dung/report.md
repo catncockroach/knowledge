@@ -146,7 +146,7 @@ Trong chat có ba lệnh: `/skills` liệt kê skill dùng được ở channel 
 
 **Bảo mật skill.** Skill Scanner quét bằng regex YAML trước khi kích hoạt skill. Nó có ba chế độ `block`/`warn`/`off`, **mặc định `warn`**, tức skill đáng ngờ vẫn được bật, chỉ kèm cảnh báo. Thứ tự ưu tiên cấu hình là env `QWENPAW_SKILL_SCAN_MODE` > Console > `config.json` (`security.skill_scanner`). Whitelist khóa theo SHA-256 nội dung skill [10][12]. **Nhận định:** nếu hay cài skill từ market, đặt `QWENPAW_SKILL_SCAN_MODE=block` rồi whitelist skill tự viết. Nên giữ skill tự viết trong một git repo, khai báo qua `skill_paths`, rồi broadcast sang các agent cần dùng.
 
-## "Subagent" là bản sao tạm của cùng agent; muốn chuyên gia thì tạo agent riêng
+## "Subagent" là phiên phụ tạm thời của cùng agent (session mới, không chép hội thoại); muốn chuyên gia thì tạo agent riêng
 
 QwenPaw có ba khái niệm dễ lẫn. **Agent** là một persona độc lập. Mỗi agent có workspace, `agent.json`, lịch sử chat, cron, skill và channel riêng, và "remembers its own conversations (no cross-talk)". Provider và env thì dùng chung giữa các agent [5]. **Subagent** là phiên phụ tạm thời của chính agent đang chạy, sinh ra bằng `spawn_subagent`: cùng identity, cùng workspace, mặc định cùng toàn bộ tool và skill, và không resume được [6][5]. **External agent** là Claude Code, Codex, Qwen Code hay opencode, được gọi qua ACP bằng `delegate_external_agent` [30].
 
@@ -194,63 +194,64 @@ Việc lớn nhiều bước thì dùng Mission Mode: `/mission <task> --max-ite
 
 Giới hạn cần biết. Ở v2.2.1 **không có callback** báo việc nền xong: agent cha phải tự poll `check_agent_task`, docstring dặn chờ 30 giây rồi poll mỗi 30–60 giây. PR đánh thức agent cha khi việc nền xong (#8063) vẫn còn mở tới 2026-10-23 [55]. Grep source không thấy giới hạn độ sâu lồng (chưa chạy thử). Kết quả `chat_with_agent` được miễn tỉa khỏi context, nên câu trả lời dài chiếm chỗ lâu [12]. **Nhận định:** vì timeout là tham số do model truyền vào tool, cách ổn định nhất là ghi vào `AGENTS.md` của agent một quy tắc như "với việc dài, gọi `spawn_subagent`/`chat_with_agent` với `timeout=1800` hoặc dùng `background=True`/`submit_to_agent`".
 
-## Subagent không có system prompt riêng; gắn nhãn nhanh thì gọi thẳng model hoặc dùng agent riêng
+## Context của subagent: không copy hội thoại của cha, nhưng dùng chung file persona của workspace
 
-**System prompt của subagent là của agent cha.** `spawn_subagent` chỉ có các tham số `task`, `fork`, `background`, `timeout`, `allowed_tools`, `skills` và `batch`. Không có tham số nào cho system prompt [6]. Subagent chạy dưới cùng identity và workspace với agent cha, nên prompt của nó được dựng y như của cha, và code dựng prompt không có nhánh riêng nào cho subagent [28]. Prompt đó gồm:
-- khối "protected execution contract" luôn có, khoảng 3,5 KB [56];
-- các file trong `system_prompt_files` của `agent.json`, mặc định `["AGENTS.md", "SOUL.md", "PROFILE.md"]` [12][28];
-- các khối ngữ cảnh thư mục project, workspace, môi trường (giờ, session, OS);
-- danh sách skill, cộng nội dung skill nếu skill bật `preload` [28][17].
+**Subagent không nhận context hội thoại của cha.** Với `fork=False` (mặc định), subagent mở một session mới. Docstring ghi: "does NOT inherit the parent agent's dialogue history, accumulated state, or in-progress tool calls". Chỉ khi `fork=True` mới chép state đã lưu của phiên cha sang [6]. Thứ subagent thấy là:
+- **Tin nhắn user:** `task` là tin nhắn duy nhất [6].
+- **System prompt:** không phải bản chép từ phiên của cha. Nó được *dựng lại* từ cấu hình của chính agent mà subagent mang identity. `spawn_subagent` gửi request với `agent_id` của agent hiện tại và chỉ thêm metadata định tuyến approval (`root_session_id`, `parent_session_id`, cờ `_spawn_subagent`) [6]. Builder dựng prompt từ workspace của agent đó, không có nhánh riêng cho subagent [28]. Prompt gồm:
+  - khối "protected execution contract", khoảng 3,5 KB, luôn có [56];
+  - các file trong `system_prompt_files` (mặc định `AGENTS.md`, `SOUL.md`, `PROFILE.md`) [12][28];
+  - các khối ngữ cảnh thư mục và môi trường;
+  - danh sách skill [28][17].
 
-**Phần còn lại của context subagent:**
-- `task` là tin nhắn user duy nhất [6].
-- `fork=False` cho session trống; `fork=True` chép thêm toàn bộ lịch sử của cha [6].
-- `allowed_tools=[]` bỏ mọi tool, kể cả tool memory, vì whitelist lọc ở bước cuối sau khi đã gộp tool workspace, tool phụ và tool memory [17].
-- `skills=[...]` chỉ giữ những skill nằm trong tập skill hiệu lực của cha; `skills=[]` không nạp skill nào [17].
-- `subagent_model` chỉ đổi model, không đổi prompt [6].
+  Hệ quả thực tế: sửa `AGENTS.md` của agent thì prompt của mọi subagent cũng đổi. `spawn_subagent` không có tham số nào cho system prompt.
+- **Tools:** `allowed_tools` là whitelist lọc ở bước cuối, gồm cả tool memory. `[]` bỏ hết tool [17].
+- **Skills:** `skills` là whitelist trong tập skill của agent. `[]` không nạp skill nào [17].
+- **Model:** `subagent_model` chỉ đổi model, không đổi prompt [6].
 
-**Ba cách "gắn vai" cho subagent:**
-1. **Viết chỉ dẫn vai vào `task`.** Đây là cách Mission Mode dùng: master soạn `worker_prompt` hoặc `verifier_prompt` (kèm khối "Verifier Instructions") rồi gọi `spawn_subagent(task=worker_prompt, fork=True, background=True, ...)` [57]. Vì chính LLM của agent cha soạn lời gọi, cách điều khiển bền nhất là ghi quy tắc vào `AGENTS.md` của cha, ví dụ "khi giao review cho subagent, mở đầu task bằng vai reviewer".
-2. **Đóng vai thành skill** rồi truyền `skills=["ten-skill"]`. **Chưa kiểm chứng:** `preload` có áp dụng cho subagent hay không.
-3. **Tạo agent riêng.** Agent riêng có `AGENTS.md`/`SOUL.md` và `system_prompt_files` riêng. Đây là cách duy nhất có system prompt thật sự riêng. Giao việc cho nó qua `chat_with_agent` hoặc `submit_to_agent` [5][6].
+**Ba cách gắn vai cho subagent:**
+1. **Viết chỉ dẫn vai vào `task`.** Mission Mode làm đúng như vậy: master soạn `worker_prompt` hoặc `verifier_prompt` rồi gọi `spawn_subagent(task=..., fork=True, background=True)` [57].
+2. **Đóng vai thành skill** rồi truyền `skills=[...]`. **Chưa kiểm chứng:** `preload` có áp dụng cho subagent hay không.
+3. **Tạo agent riêng**, có `AGENTS.md` và `system_prompt_files` riêng. Đây là cách duy nhất có system prompt riêng thật sự [5][6].
 
-### Gắn nhãn thuần, không tool, cần độ trễ thấp
+### Gắn nhãn comment theo batch bằng subagent, ưu tiên tốc độ
 
-Đường đi của một lần `spawn_subagent` gồm:
-1. agent cha tốn một lượt LLM để soạn lời gọi;
-2. request đi qua HTTP nội bộ `/console/chat`;
-3. builder dựng agent: resolve skill, governor, toolkit, prompt;
-4. vòng agent của subagent chạy với system prompt kế thừa từ cha [6][17].
+Bài toán: có vài trăm đến vài nghìn comment ngôn ngữ tự nhiên. Cần gắn nhãn ý nghĩa cho **từng comment** để thay việc gắn tay, rồi đếm xem ý nào xuất hiện nhiều nhất. Mỗi subagent xử lý một batch khoảng 50–200 comment. Cách để LLM chỉ đọc cả batch rồi trả top 10–20 ý nhanh hơn, nhưng mất liên kết giữa nhãn và comment, nên chỉ dùng để khám phá. Report cũ trong repo đã kết luận cùng hướng: **codebook trước, gán từng bản ghi sau**, có nhãn "khác", đếm bằng code ([gom nghĩa văn bản tự do](../2026-10-21-gom-nghia-van-ban-tu-do-ky-thuat/report.md), [reductive content analysis](../2026-10-21-reductive-content-analysis-llm/report.md)).
 
-Vì vậy, với việc gắn nhãn thuần, `spawn_subagent` là đường chậm nhất. **Nhận định** (suy từ đường đi request trong source, **chưa đo** độ trễ thực tế), thứ tự từ nhanh đến chậm:
+**Pipeline đề xuất.** Đây là **nhận định**: suy từ source v2.2.1 và cơ chế sinh token, **chưa đo** trên QwenPaw.
 
-1. **Gọi thẳng API model, bỏ qua agent.** Viết script gọi endpoint OpenAI-compatible của provider (DashScope, Ollama…):
-   - system prompt là mô tả bộ nhãn;
-   - user message là một lô 20–50 mẫu, yêu cầu trả JSON;
-   - giữ system prompt cố định để tận dụng prompt cache, tắt thinking, chọn model nhỏ.
+1. **Chốt codebook một lần.** Một subagent (hoặc chính agent cha) đọc một mẫu vài trăm comment và đề xuất 15–30 mã. Mỗi mã có tên ngắn, định nghĩa một câu và ví dụ, cộng thêm mã `OTHER`. Người duyệt rồi khóa codebook. Đây là lượt duy nhất cho LLM tự do quy nạp.
+2. **Ghi dữ liệu ra file, không nhét vào `task`.** `task` là tham số tool do LLM của cha *sinh ra*. Nhét 200 comment vào `task` buộc cha gõ lại toàn bộ comment thành token đầu ra, và đây là phần chậm nhất của một lượt LLM. Thay vào đó:
+   - dùng script chia comment thành file `batches/b01.jsonl`, `b02.jsonl`…, mỗi dòng gồm `id` và `text`;
+   - `task` chỉ ghi codebook (hoặc đường dẫn tới `codebook.md`) và đường dẫn file batch;
+   - subagent được `allowed_tools=["read_file", "write_file"]`, `skills=[]` (tên tool lấy từ `agents/tools/file_io.py` [59]).
+3. **Đầu ra tối giản**, vì tốc độ sinh token đầu ra quyết định độ trễ:
+   - mỗi comment một dòng `id<TAB>mã[,mã]`, ví dụ `1042\tC07,C12`;
+   - không lặp lại nội dung comment, không viết giải thích, tối đa 2 mã mỗi comment;
+   - với 200 comment, đầu ra khoảng 1–2 nghìn token. Nếu mỗi dòng có JSON và lý do thì có thể gấp 5–10 lần.
 
-   Muốn QwenPaw kích hoạt thì gói script thành skill; lúc đó agent cần tool shell, nhưng phần gắn nhãn vẫn đi thẳng tới model.
-2. **Agent `labeler` riêng, gọi trực tiếp** bằng `qwenpaw agents chat --to-agent labeler ...` từ script [58]. Cách này bỏ được lượt LLM của agent cha so với `chat_with_agent`. Khối `agent.json` dưới đây suy từ schema và **chưa chạy thử** [12]:
+   Subagent ghi kết quả ra `labels/b01.tsv` và chỉ trả về một dòng tóm tắt, để context của cha không phình.
+4. **Chạy song song:**
+   - gọi `spawn_subagent(task="", batch=[{task: "...b01...", allowed_tools: [...], skills: []}, ...])`, mỗi lần tối đa 10 batch, 3 batch chạy cùng lúc [6];
+   - đặt `subagent_model` là model nhanh, `thinking_level: "off"` [12];
+   - poll bằng `check_agent_task`, chờ 30 giây rồi cách 30–60 giây mỗi lần [6].
+5. **Đếm bằng code, không bằng LLM.** Gộp các file `labels/*.tsv` rồi đếm tần suất mỗi mã, mẫu số là số comment. Theo dõi tỷ lệ `OTHER`. Tỷ lệ này cao thì quay lại bước 1 để mở rộng codebook.
+6. **Kiểm chất lượng:** chạy lại một batch hai lần để đo độ ổn định, và để người gán tay khoảng 100 comment để so với LLM.
 
-   ```json
-   {
-     "system_prompt_files": ["AGENTS.md"],
-     "thinking_level": "off",
-     "active_model": {"provider_id": "<provider>", "model": "<model nhỏ, nhanh>"},
-     "tools": {"builtin_tools": {"<tên tool>": {"enabled": false}}}
-   }
-   ```
+**Chọn cỡ batch.** Batch lớn giảm số lượt gọi và số lần lặp codebook. Batch nhỏ thì mỗi lượt xong sớm hơn, chia đều cho 3 luồng song song tốt hơn, và model ít bỏ sót hay lệch dòng ở cuối danh sách dài. **Nhận định:** 50–100 comment mỗi batch là điểm khởi đầu hợp lý. Kiểm bằng cách đếm số dòng đầu ra so với đầu vào và so `id`.
 
-   - `AGENTS.md` chỉ chứa mô tả nhãn và định dạng đầu ra.
-   - Không bật skill, không gắn MCP.
-   - `thinking_level` nhận `inherit|off|low|medium|high` [12].
-   - Khối contract khoảng 3,5 KB và các khối ngữ cảnh môi trường vẫn luôn bị chèn vào, không tắt được nếu không sửa code [28][56].
-3. **`spawn_subagent` tối giản:**
-   - gọi `spawn_subagent(task="<mô tả nhãn + định dạng JSON>\n\nDATA:\n<lô dữ liệu>", fork=False, allowed_tools=[], skills=[])`;
-   - đặt `subagent_model` nhanh, và `thinking_level: "off"` ở `agent.json` của cha;
-   - nhiều lô thì dùng `batch` (tối đa 10 lô, 3 lô chạy đồng thời) [6].
+**Giới hạn khi chạy trong QwenPaw:**
+- Mỗi subagent vẫn mang system prompt dựng từ workspace của agent (contract khoảng 3,5 KB, cộng `AGENTS.md`/`SOUL.md`/`PROFILE.md`) và mỗi lần còn tốn một lượt LLM của cha để điều phối.
+- Muốn system prompt gọn chỉ còn codebook, có hai cách:
+  - tạo agent `labeler` riêng: `system_prompt_files: ["AGENTS.md"]`, `AGENTS.md` chỉ chứa quy tắc gắn nhãn, không skill, không MCP, model nhanh, `thinking_level: "off"`;
+  - cho chính agent `labeler` gọi `spawn_subagent`, để subagent kế thừa prompt gọn đó.
+- Có thể gọi `labeler` thẳng từ script bằng `qwenpaw agents chat --to-agent labeler` [58]. Khối cấu hình này suy từ schema [12], **chưa chạy thử**.
+- **Nhận định:** nếu ưu tiên tuyệt đối là tốc độ và độ song song, gọi thẳng API model (OpenAI-compatible) bằng script vẫn nhanh nhất:
+  - không có lượt điều phối, không có contract;
+  - system prompt cố định nên tận dụng được prompt cache;
+  - độ song song không bị giới hạn 3 luồng của `spawn_subagent` batch.
 
-   Nhược điểm: system prompt nặng của cha vẫn đi theo, và mỗi lần gọi tốn thêm lượt LLM của cha.
+  QwenPaw khi đó chỉ đóng vai kích hoạt, qua một skill chạy script.
 
 ## MCP, tool và bảo mật mặc định khá mở; memory và heartbeat cần bật thêm
 
@@ -311,7 +312,7 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 - Chưa tìm thấy field cụ thể cho per-agent model routing/fallback mới ở v2.2.1 (#7501) ngoài `fallback_models`/`llm_routing`. Issue #7749 cho thấy người dùng cũng không tìm ra [53].
 - Chưa đọc schema đầy đủ của `policy.yaml`, `providers.json` (có mã hóa bằng master key hay không) và `jobs.json`.
 - Chưa xác minh việc sửa `mcp.clients` sau migration có còn được runtime đọc hay không. Chưa xác minh giới hạn độ sâu lồng subagent bằng chạy thật (grep `depth`, `nested`, `MAX_DEPTH` không ra kết quả).
-- Chưa đo độ trễ thực tế của ba cách gắn nhãn (gọi thẳng model, agent `labeler` riêng, `spawn_subagent` tối giản); thứ tự nhanh–chậm chỉ suy từ đường đi request trong source. Chưa xác nhận skill bật `preload` có được chèn vào prompt của subagent hay không, và chưa đo kích thước thật của các khối ngữ cảnh môi trường.
+- Chưa đo độ trễ thực tế của pipeline gắn nhãn comment (subagent theo batch, agent `labeler` riêng, gọi thẳng API); các khuyến nghị về cỡ batch và định dạng đầu ra là nhận định từ source và cơ chế sinh token. Chưa kiểm giới hạn 3 luồng đồng thời có áp dụng khi gọi nhiều lần `spawn_subagent` batch song song hay không. Chưa xác nhận skill bật `preload` có được chèn vào prompt của subagent hay không, và chưa đo kích thước thật của các khối ngữ cảnh môi trường.
 - Chưa thử chạy skill OpenClaw hay Claude Code thật. Các field frontmatter riêng của Claude Code (`allowed-tools`, `disable-model-invocation`) không thấy xử lý trong source, nhiều khả năng bị bỏ qua.
 - Không mở được docs site `qwenpaw.agentscope.io`, help.aliyun.com, IT之家, AIbase (lỗi DNS). GitHub API và search bị chặn (403), nên chỉ duyệt trang đầu danh sách issue. Không tìm thấy blog hay hướng dẫn cộng đồng bậc 2 nào (truy vấn: "QwenPaw skills issue github SKILL.md", "QwenPaw issue MCP sandbox approval config github", "QwenPaw github issue install error qwenpaw app").
 
@@ -375,3 +376,4 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 [56] src/qwenpaw/runtime/protected_prompt.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/runtime/protected_prompt.py
 [57] src/qwenpaw/modes/mission/prompts.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/modes/mission/prompts.py
 [58] src/qwenpaw/cli/agents_cmd.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/cli/agents_cmd.py
+[59] src/qwenpaw/agents/tools/file_io.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/agents/tools/file_io.py
