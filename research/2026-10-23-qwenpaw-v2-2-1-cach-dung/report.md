@@ -194,6 +194,64 @@ Việc lớn nhiều bước thì dùng Mission Mode: `/mission <task> --max-ite
 
 Giới hạn cần biết. Ở v2.2.1 **không có callback** báo việc nền xong: agent cha phải tự poll `check_agent_task`, docstring dặn chờ 30 giây rồi poll mỗi 30–60 giây. PR đánh thức agent cha khi việc nền xong (#8063) vẫn còn mở tới 2026-10-23 [55]. Grep source không thấy giới hạn độ sâu lồng (chưa chạy thử). Kết quả `chat_with_agent` được miễn tỉa khỏi context, nên câu trả lời dài chiếm chỗ lâu [12]. **Nhận định:** vì timeout là tham số do model truyền vào tool, cách ổn định nhất là ghi vào `AGENTS.md` của agent một quy tắc như "với việc dài, gọi `spawn_subagent`/`chat_with_agent` với `timeout=1800` hoặc dùng `background=True`/`submit_to_agent`".
 
+## Subagent không có system prompt riêng; gắn nhãn nhanh thì gọi thẳng model hoặc dùng agent riêng
+
+**System prompt của subagent là của agent cha.** `spawn_subagent` chỉ có các tham số `task`, `fork`, `background`, `timeout`, `allowed_tools`, `skills` và `batch`. Không có tham số nào cho system prompt [6]. Subagent chạy dưới cùng identity và workspace với agent cha, nên prompt của nó được dựng y như của cha, và code dựng prompt không có nhánh riêng nào cho subagent [28]. Prompt đó gồm:
+- khối "protected execution contract" luôn có, khoảng 3,5 KB [56];
+- các file trong `system_prompt_files` của `agent.json`, mặc định `["AGENTS.md", "SOUL.md", "PROFILE.md"]` [12][28];
+- các khối ngữ cảnh thư mục project, workspace, môi trường (giờ, session, OS);
+- danh sách skill, cộng nội dung skill nếu skill bật `preload` [28][17].
+
+**Phần còn lại của context subagent:**
+- `task` là tin nhắn user duy nhất [6].
+- `fork=False` cho session trống; `fork=True` chép thêm toàn bộ lịch sử của cha [6].
+- `allowed_tools=[]` bỏ mọi tool, kể cả tool memory, vì whitelist lọc ở bước cuối sau khi đã gộp tool workspace, tool phụ và tool memory [17].
+- `skills=[...]` chỉ giữ những skill nằm trong tập skill hiệu lực của cha; `skills=[]` không nạp skill nào [17].
+- `subagent_model` chỉ đổi model, không đổi prompt [6].
+
+**Ba cách "gắn vai" cho subagent:**
+1. **Viết chỉ dẫn vai vào `task`.** Đây là cách Mission Mode dùng: master soạn `worker_prompt` hoặc `verifier_prompt` (kèm khối "Verifier Instructions") rồi gọi `spawn_subagent(task=worker_prompt, fork=True, background=True, ...)` [57]. Vì chính LLM của agent cha soạn lời gọi, cách điều khiển bền nhất là ghi quy tắc vào `AGENTS.md` của cha, ví dụ "khi giao review cho subagent, mở đầu task bằng vai reviewer".
+2. **Đóng vai thành skill** rồi truyền `skills=["ten-skill"]`. **Chưa kiểm chứng:** `preload` có áp dụng cho subagent hay không.
+3. **Tạo agent riêng.** Agent riêng có `AGENTS.md`/`SOUL.md` và `system_prompt_files` riêng. Đây là cách duy nhất có system prompt thật sự riêng. Giao việc cho nó qua `chat_with_agent` hoặc `submit_to_agent` [5][6].
+
+### Gắn nhãn thuần, không tool, cần độ trễ thấp
+
+Đường đi của một lần `spawn_subagent` gồm:
+1. agent cha tốn một lượt LLM để soạn lời gọi;
+2. request đi qua HTTP nội bộ `/console/chat`;
+3. builder dựng agent: resolve skill, governor, toolkit, prompt;
+4. vòng agent của subagent chạy với system prompt kế thừa từ cha [6][17].
+
+Vì vậy, với việc gắn nhãn thuần, `spawn_subagent` là đường chậm nhất. **Nhận định** (suy từ đường đi request trong source, **chưa đo** độ trễ thực tế), thứ tự từ nhanh đến chậm:
+
+1. **Gọi thẳng API model, bỏ qua agent.** Viết script gọi endpoint OpenAI-compatible của provider (DashScope, Ollama…):
+   - system prompt là mô tả bộ nhãn;
+   - user message là một lô 20–50 mẫu, yêu cầu trả JSON;
+   - giữ system prompt cố định để tận dụng prompt cache, tắt thinking, chọn model nhỏ.
+
+   Muốn QwenPaw kích hoạt thì gói script thành skill; lúc đó agent cần tool shell, nhưng phần gắn nhãn vẫn đi thẳng tới model.
+2. **Agent `labeler` riêng, gọi trực tiếp** bằng `qwenpaw agents chat --to-agent labeler ...` từ script [58]. Cách này bỏ được lượt LLM của agent cha so với `chat_with_agent`. Khối `agent.json` dưới đây suy từ schema và **chưa chạy thử** [12]:
+
+   ```json
+   {
+     "system_prompt_files": ["AGENTS.md"],
+     "thinking_level": "off",
+     "active_model": {"provider_id": "<provider>", "model": "<model nhỏ, nhanh>"},
+     "tools": {"builtin_tools": {"<tên tool>": {"enabled": false}}}
+   }
+   ```
+
+   - `AGENTS.md` chỉ chứa mô tả nhãn và định dạng đầu ra.
+   - Không bật skill, không gắn MCP.
+   - `thinking_level` nhận `inherit|off|low|medium|high` [12].
+   - Khối contract khoảng 3,5 KB và các khối ngữ cảnh môi trường vẫn luôn bị chèn vào, không tắt được nếu không sửa code [28][56].
+3. **`spawn_subagent` tối giản:**
+   - gọi `spawn_subagent(task="<mô tả nhãn + định dạng JSON>\n\nDATA:\n<lô dữ liệu>", fork=False, allowed_tools=[], skills=[])`;
+   - đặt `subagent_model` nhanh, và `thinking_level: "off"` ở `agent.json` của cha;
+   - nhiều lô thì dùng `batch` (tối đa 10 lô, 3 lô chạy đồng thời) [6].
+
+   Nhược điểm: system prompt nặng của cha vẫn đi theo, và mỗi lần gọi tốn thêm lượt LLM của cha.
+
 ## MCP, tool và bảo mật mặc định khá mở; memory và heartbeat cần bật thêm
 
 **MCP.** Thêm MCP qua Console (Agent → MCP) bằng cách dán JSON `{"mcpServers": {...}}`. Hỗ trợ ba transport: `stdio` (có `command`), `streamable_http` và `sse` (có `url`). MCP local cần Node.js 18+ [35]. Từ v2.x, mỗi MCP client được lưu thành driver card `workspaces/<id>/drivers/mcp/<name>.yaml` với access policy riêng (allow/deny/ask, **mặc định ask**). Card quản lý ở Agent → MCP → "Tools & Access" [10]. Ở lần khởi động đầu, `mcp.clients` cũ trong `agent.json` được chuyển một lần sang card, rồi `mcp.migration_version` được đặt bằng 2 [36]. **Nhận định:** sau migration, sửa `mcp.clients` trong `agent.json` có thể không còn tác dụng, nên quản lý MCP qua Console. Điểm này chưa được test. Source còn có các field docs chưa ghi: `http_timeout`, `tools` (whitelist) và `oauth` [12].
@@ -253,6 +311,7 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 - Chưa tìm thấy field cụ thể cho per-agent model routing/fallback mới ở v2.2.1 (#7501) ngoài `fallback_models`/`llm_routing`. Issue #7749 cho thấy người dùng cũng không tìm ra [53].
 - Chưa đọc schema đầy đủ của `policy.yaml`, `providers.json` (có mã hóa bằng master key hay không) và `jobs.json`.
 - Chưa xác minh việc sửa `mcp.clients` sau migration có còn được runtime đọc hay không. Chưa xác minh giới hạn độ sâu lồng subagent bằng chạy thật (grep `depth`, `nested`, `MAX_DEPTH` không ra kết quả).
+- Chưa đo độ trễ thực tế của ba cách gắn nhãn (gọi thẳng model, agent `labeler` riêng, `spawn_subagent` tối giản); thứ tự nhanh–chậm chỉ suy từ đường đi request trong source. Chưa xác nhận skill bật `preload` có được chèn vào prompt của subagent hay không, và chưa đo kích thước thật của các khối ngữ cảnh môi trường.
 - Chưa thử chạy skill OpenClaw hay Claude Code thật. Các field frontmatter riêng của Claude Code (`allowed-tools`, `disable-model-invocation`) không thấy xử lý trong source, nhiều khả năng bị bỏ qua.
 - Không mở được docs site `qwenpaw.agentscope.io`, help.aliyun.com, IT之家, AIbase (lỗi DNS). GitHub API và search bị chặn (403), nên chỉ duyệt trang đầu danh sách issue. Không tìm thấy blog hay hướng dẫn cộng đồng bậc 2 nào (truy vấn: "QwenPaw skills issue github SKILL.md", "QwenPaw issue MCP sandbox approval config github", "QwenPaw github issue install error qwenpaw app").
 
@@ -313,3 +372,6 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 [53] Issue #7749 (model failover config location) — GitHub agentscope-ai/QwenPaw, mở 2026-09-14 (bậc 1). https://github.com/agentscope-ai/QwenPaw/issues/7749
 [54] Release notes v1.1.0 "CoPaw is Officially Rebranding to QwenPaw" — agentscope-ai, 2026-04 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/main/website/public/release-notes/v1.1.0.md
 [55] PR #8063 "wake parent agent session when a background task finishes" — GitHub agentscope-ai/QwenPaw, mở 2026-09-30, còn mở 2026-10-23 (bậc 1). https://github.com/agentscope-ai/QwenPaw/pull/8063
+[56] src/qwenpaw/runtime/protected_prompt.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/runtime/protected_prompt.py
+[57] src/qwenpaw/modes/mission/prompts.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/modes/mission/prompts.py
+[58] src/qwenpaw/cli/agents_cmd.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/cli/agents_cmd.py
