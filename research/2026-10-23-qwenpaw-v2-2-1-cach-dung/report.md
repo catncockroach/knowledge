@@ -5,7 +5,7 @@ question: Với QwenPaw v2.2.1 (agentscope-ai/QwenPaw), cài đặt, dùng hằn
 tags: [qwenpaw, agentscope, ai-agent, skills, subagent, multi-agent]
 ---
 
-# QwenPaw v2.2.1: hai lớp cấu hình, skill đi qua pool, subagent là bản sao tạm
+# QwenPaw v2.2.1: hai lớp cấu hình, skill đi qua pool, subagent là phiên phụ tạm thời
 
 > **Câu hỏi:** Cài, dùng hằng ngày và cấu hình skills, subagent/multi-agent của QwenPaw v2.2.1 thế nào? · **Ngày:** 2026-10-23 · **Phạm vi:** bản v2.2.1 (tag 2026-09-11), đối chiếu docs trong repo với source cùng tag; người dùng cá nhân trên Linux/macOS · **Kiểm chứng:** 62 khẳng định đã đối chiếu nguồn, 14 đã sửa
 
