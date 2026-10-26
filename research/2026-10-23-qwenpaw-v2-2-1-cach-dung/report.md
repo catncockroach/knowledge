@@ -3,16 +3,16 @@ title: Cách dùng QwenPaw v2.2.1 — cài đặt, cấu hình skills và subage
 date: 2026-10-23
 question: Với QwenPaw v2.2.1 (agentscope-ai/QwenPaw), cài đặt, dùng hằng ngày và cấu hình skills, subagent (multi-agent) cùng các thành phần liên quan như thế nào?
 updated: 2026-10-26
-tags: [qwenpaw, agentscope, ai-agent, skills, subagent, multi-agent, rest-api]
+tags: [qwenpaw, agentscope, ai-agent, skills, subagent, multi-agent, rest-api, structured-output]
 ---
 
 # QwenPaw v2.2.1: hai lớp cấu hình, skill đi qua pool, subagent là phiên phụ tạm thời
 
-> **Câu hỏi:** Cài, dùng hằng ngày và cấu hình skills, subagent/multi-agent của QwenPaw v2.2.1 thế nào? · **Ngày:** 2026-10-23 · **Phạm vi:** bản v2.2.1 (tag 2026-09-11), đối chiếu docs trong repo với source cùng tag; người dùng cá nhân trên Linux/macOS · **Kiểm chứng:** 62 khẳng định đã đối chiếu nguồn, 14 đã sửa · **Cập nhật 2026-10-26:** thêm mục gọi REST API chat, có chạy thử v2.2.1 với model giả
+> **Câu hỏi:** Cài, dùng hằng ngày và cấu hình skills, subagent/multi-agent của QwenPaw v2.2.1 thế nào? · **Ngày:** 2026-10-23 · **Phạm vi:** bản v2.2.1 (tag 2026-09-11), đối chiếu docs trong repo với source cùng tag; người dùng cá nhân trên Linux/macOS · **Kiểm chứng:** 62 khẳng định đã đối chiếu nguồn, 14 đã sửa · **Cập nhật 2026-10-26:** thêm mục gọi REST API chat và structured output, có chạy thử v2.2.1 với model giả
 
 ## Tóm tắt
 
-Dùng QwenPaw v2.2.1 tối thiểu gồm ba bước: cài bằng `pip install qwenpaw==2.2.1` trong venv (Python 3.11–3.13), chạy `qwenpaw init --defaults` rồi `qwenpaw app`, sau đó vào Console ở `http://127.0.0.1:8088/` để đặt model mặc định [2]. Bản v2.2.1 có thật, phát hành ngày **2026-09-11**, nhưng **không còn là bản mới nhất**: v2.2.2 ra ngày 2026-10-15 và v2.2.2.post1 ngày 2026-10-22 [1]. Cấu hình chia hai lớp. `~/.qwenpaw/config.json` giữ danh sách agent và vài thiết lập toàn cục. `~/.qwenpaw/workspaces/<agent_id>/agent.json` giữ mọi thứ của từng agent: channel, MCP, tools, model, heartbeat, bảo mật. API key nằm riêng trong `~/.qwenpaw.secret/` [3]. Skill là một thư mục chứa `SKILL.md` theo kiểu Anthropic. Skill nằm trong pool dùng chung, được broadcast sang workspace của từng agent, rồi được bật bằng Console hoặc `qwenpaw skills enable` [4]. "Subagent" theo nghĩa của QwenPaw là phiên phụ tạm thời của *chính agent đó*, sinh ra bằng tool `spawn_subagent`. Muốn có "chuyên gia" với model và persona riêng thì phải tạo agent riêng, rồi giao việc qua `chat_with_agent` hoặc `submit_to_agent` [5][6]. Các điểm trên đều chắc chắn cao, vì đã đọc cả docs lẫn source ở tag v2.2.1. Tuy vậy, docs lệch với source ở khá nhiều chi tiết, và một số bản sửa quan trọng (timeout của `chat_with_agent`, kiểm tra tên skill) chỉ có ở v2.2.2. Muốn gọi QwenPaw từ script để lấy output thì dùng REST API riêng `POST /api/console/chat`. API này theo giao thức của **AgentScope Runtime** (có docs chính thức), trả SSE, và **không** phải chuẩn OpenAI-compatible [60][61].
+Dùng QwenPaw v2.2.1 tối thiểu gồm ba bước: cài bằng `pip install qwenpaw==2.2.1` trong venv (Python 3.11–3.13), chạy `qwenpaw init --defaults` rồi `qwenpaw app`, sau đó vào Console ở `http://127.0.0.1:8088/` để đặt model mặc định [2]. Bản v2.2.1 có thật, phát hành ngày **2026-09-11**, nhưng **không còn là bản mới nhất**: v2.2.2 ra ngày 2026-10-15 và v2.2.2.post1 ngày 2026-10-22 [1]. Cấu hình chia hai lớp. `~/.qwenpaw/config.json` giữ danh sách agent và vài thiết lập toàn cục. `~/.qwenpaw/workspaces/<agent_id>/agent.json` giữ mọi thứ của từng agent: channel, MCP, tools, model, heartbeat, bảo mật. API key nằm riêng trong `~/.qwenpaw.secret/` [3]. Skill là một thư mục chứa `SKILL.md` theo kiểu Anthropic. Skill nằm trong pool dùng chung, được broadcast sang workspace của từng agent, rồi được bật bằng Console hoặc `qwenpaw skills enable` [4]. "Subagent" theo nghĩa của QwenPaw là phiên phụ tạm thời của *chính agent đó*, sinh ra bằng tool `spawn_subagent`. Muốn có "chuyên gia" với model và persona riêng thì phải tạo agent riêng, rồi giao việc qua `chat_with_agent` hoặc `submit_to_agent` [5][6]. Các điểm trên đều chắc chắn cao, vì đã đọc cả docs lẫn source ở tag v2.2.1. Tuy vậy, docs lệch với source ở khá nhiều chi tiết, và một số bản sửa quan trọng (timeout của `chat_with_agent`, kiểm tra tên skill) chỉ có ở v2.2.2. Muốn gọi QwenPaw từ script để lấy output thì dùng REST API riêng `POST /api/console/chat`. API này theo giao thức của **AgentScope Runtime** (có docs chính thức), trả SSE, và **không** phải chuẩn OpenAI-compatible [60][61]. API này cũng không có tham số structured output. Muốn ép JSON theo schema thì có hai cách: đặt `response_format` trong `generate_kwargs` của một model rồi chọn model đó cho từng request bằng `model_slot_override`, hoặc ghi schema vào prompt rồi validate ở client [66][67][68].
 
 **Điểm chính**
 - v2.2.1 là bản nhỏ sau v2.2.0. Nó thêm model routing riêng cho từng agent, preload skill, Make Skill nâng cấp và kiểm tra dependency của skill. Hub, Mail và Data đã có từ v2.2.0 [7][8].
@@ -21,6 +21,7 @@ Dùng QwenPaw v2.2.1 tối thiểu gồm ba bước: cài bằng `pip install qw
 - `spawn_subagent` chờ tối đa **600 giây** ở foreground. Batch chạy tối đa **10** task, cùng lúc **3** task. Timeout là tham số model truyền vào tool, không phải cấu hình toàn cục [6][11].
 - Sandbox **mặc định tắt**, Console **không có đăng nhập** mặc định, và tool agent-to-agent được bật sẵn [12][10][13].
 - Gọi chat từ ngoài: `POST http://127.0.0.1:8088/api/console/chat` với header `X-Agent-Id`, luôn trả SSE. Text cuối nằm trong event `object: "response"` có `status: "completed"`. Không có `/v1/chat/completions`. Cần JSON một lần thì dùng `POST /api/console/chat/task` rồi poll [60][61][63].
+- Structured output không có sẵn trong API chat. `response_format` đặt trong `generate_kwargs` của model được chuyển nguyên tới backend, kèm theo cả danh sách tool [67][68].
 
 ## v2.2.1 có thật, nhưng người cài mới hôm nay sẽ nhận v2.2.2
 
@@ -132,6 +133,40 @@ def ask(text, session_id=None, agent_id="default", timeout=600):
 ```
 
 **Không muốn đọc SSE: task nền rồi poll.** `POST /api/console/chat/task` nhận cùng body, thêm `timeout` tính bằng giây (mặc định 3600). Nó trả ngay `{"task_id": "task-…", "timeout": …}`. Sau đó poll `GET /api/console/chat/task/{task_id}`: khi còn chạy thì nhận `{"status": "running"}`, khi xong thì nhận `{"status": "finished", "result": {"status": "completed" | "failed", "output": [...], "usage": …, "error": …}}` [61][9]. Endpoint này không có trong trang API tutorial. Nó là cơ chế đứng sau tool `submit_to_agent` và lệnh `qwenpaw agents chat --background` [63][58]. Task được giữ trong bộ nhớ, nên restart server là mất kết quả chưa lấy. Chạy thử với `timeout: 120`: poll ngay thì nhận `running`, sau 3 giây thì nhận `finished` kèm đúng text [64]. Từ shell còn có thể gọi `qwenpaw agents chat --from-agent default --to-agent <id> --text "…" [--session-id …] [--timeout 300]`, lệnh này gọi chính API trên [58].
+
+## Structured output qua API: không có tham số sẵn, phải đi đường vòng
+
+**API chat không nhận schema.** Body của `/api/console/chat` và `/api/console/chat/task` không có field nào kiểu `response_format`, `json_schema` hay `output_schema`. `ctx.chat` của PawApp cũng không có [61][65]. Trong source, chuỗi `structured_model` chỉ xuất hiện ở chỗ nó bị **bỏ đi** (`kwargs.pop("structured_model", None)`), vì AgentScope 2.0 chuyển structured output sang hàm `generate_structured_output`. Vòng ReAct của QwenPaw không gọi hàm này [66]. Docs cũng không có trang nào về structured output cho API. Grep cả v2.2.1 lẫn main đều ra cùng kết quả. Có ba cách làm, xếp từ ép mạnh nhất tới linh hoạt nhất.
+
+**Cách 1: `response_format` trong `generate_kwargs`, chọn model theo từng request.** Docs có mục "Generation Parameters": vào Settings của provider → Advanced Configuration, nhập một JSON tham số, và QwenPaw sẽ gửi kèm JSON này mỗi lần gọi model [67]. Docs chỉ lấy ví dụ `temperature`/`top_p`/`max_tokens`, nhưng validator của REST chỉ kiểm `max_tokens`, mọi key khác được chuyển nguyên [68]. Body chat lại có field `model_slot_override` (docs không ghi) để chọn model cho riêng một request. Field này nhận `{"provider_id","model"}` hoặc chuỗi `"provider:model"` [66]. Ghép hai thứ lại:
+
+```bash
+B=http://127.0.0.1:8088/api
+# 1) một provider riêng (cùng base_url với model thật) dành cho JSON
+curl -X POST $B/models/custom-providers -H 'Content-Type: application/json' \
+  -d '{"id":"vllm-json","name":"vLLM JSON","default_base_url":"http://localhost:8000/v1",
+       "chat_model":"OpenAIChatModel","models":[{"id":"Qwen3.5","name":"Qwen3.5"}]}'
+# 2) gắn schema vào generate_kwargs của model đó
+curl -X PUT $B/models/vllm-json/models/Qwen3.5/config -H 'Content-Type: application/json' \
+  -d '{"generate_kwargs":{"response_format":{"type":"json_schema","json_schema":{"name":"label","strict":true,
+       "schema":{"type":"object","properties":{"label":{"type":"string"},"score":{"type":"number"}},
+                 "required":["label","score"],"additionalProperties":false}}}}}'
+# 3) chọn model đó cho request cần JSON
+curl -N -X POST $B/console/chat -H 'Content-Type: application/json' \
+  -d '{"input":[{"role":"user","content":[{"type":"text","text":"Gán nhãn: ..."}]}],
+       "session_id":"lbl-001","model_slot_override":"vllm-json:Qwen3.5"}'
+```
+
+Chạy thử với model giả cho kết quả như sau [69]:
+- Request có override thì gửi tới backend `response_format` nguyên văn, **kèm 26 tool** của agent.
+- Request không override, kể cả cùng `session_id`, thì không có `response_format`: override chỉ áp cho request đó.
+- Lần gọi phụ để sinh tiêu đề chat vẫn dùng model mặc định.
+
+Đổi lại, schema bị ép lên **mọi** lần gọi model trong vòng agent của request, kể cả các bước định gọi tool. OpenAI vẫn cho gọi tool khi có `response_format`. **Nhận định:** guided decoding của vLLM, Ollama hay LM Studio có thể chặn tool call, hoặc từ chối request có cả `tools` lẫn `response_format`. Provider kiểu Anthropic `messages` không có `response_format`. Cần test trên backend thật trước khi dựa vào cách này. Một schema là một model entry, nên mỗi schema cần một provider hoặc model riêng.
+
+**Cách 2: ghi schema vào prompt, validate ở client (chắc chắn nhất, không phụ thuộc backend).** Ghi schema thẳng vào tin nhắn ("chỉ trả JSON đúng schema sau, không markdown"). Lấy text cuối bằng hàm `ask()` ở mục trên, rồi `json.loads` và validate bằng Pydantic hoặc jsonschema. Nếu sai thì gửi lại trong **cùng `session_id`**, kèm thông báo lỗi để agent tự sửa. Muốn khỏi lặp schema mỗi lần thì đặt định dạng đầu ra vào persona (`AGENTS.md`) của một agent riêng như `labeler`, hoặc vào một skill. **Nhận định:** chưa đo tỉ lệ tuân thủ của cách này.
+
+**Cách 3: bỏ qua agent.** Nếu chỉ cần JSON mà không cần tool, memory hay skill của QwenPaw, gọi thẳng endpoint của model (vLLM, Ollama, OpenAI) với `response_format`. Đây cũng là hướng đã khuyên cho pipeline gắn nhãn comment ở phần dưới.
 
 ## Cấu hình nằm ở hai lớp: `config.json` toàn cục và `agent.json` của từng agent
 
@@ -380,6 +415,7 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 - Chưa xác minh việc sửa `mcp.clients` sau migration có còn được runtime đọc hay không. Chưa xác minh giới hạn độ sâu lồng subagent bằng chạy thật (grep `depth`, `nested`, `MAX_DEPTH` không ra kết quả).
 - Chưa đo độ trễ thực tế của pipeline gắn nhãn comment (subagent theo batch, agent `labeler` riêng, gọi thẳng API); các khuyến nghị về cỡ batch và định dạng đầu ra là nhận định từ source và cơ chế sinh token. Chưa kiểm giới hạn 3 luồng đồng thời có áp dụng khi gọi nhiều lần `spawn_subagent` batch song song hay không. Chưa xác nhận skill bật `preload` có được chèn vào prompt của subagent hay không, và chưa đo kích thước thật của các khối ngữ cảnh môi trường.
 - API chat mới chạy thử với model giả, lượt không gọi tool. Chưa thử với model thật và tool nhiều bước, chưa thử gọi từ máy khác khi bật auth, chưa thử `reconnect` và `/chat/stop`. Chưa đọc trực tiếp trang protocol của AgentScope Runtime; bảng event ở trên lấy từ chạy thật [64].
+- Structured output mới kiểm tới bước request gửi tới backend (model giả). Chưa thử `response_format` + `tools` trên OpenAI, vLLM, Ollama thật; chưa đo tỉ lệ JSON hợp lệ khi chỉ dặn schema trong prompt [69].
 - Chưa thử chạy skill OpenClaw hay Claude Code thật. Các field frontmatter riêng của Claude Code (`allowed-tools`, `disable-model-invocation`) không thấy xử lý trong source, nhiều khả năng bị bỏ qua.
 - Không mở được docs site `qwenpaw.agentscope.io`, help.aliyun.com, IT之家, AIbase (lỗi DNS). GitHub API và search bị chặn (403), nên chỉ duyệt trang đầu danh sách issue. Không tìm thấy blog hay hướng dẫn cộng đồng bậc 2 nào (truy vấn: "QwenPaw skills issue github SKILL.md", "QwenPaw issue MCP sandbox approval config github", "QwenPaw github issue install error qwenpaw app").
 
@@ -450,3 +486,7 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 [63] src/qwenpaw/agents/tools/agent_management.py: `collect_final_agent_chat_response`, `extract_agent_text_content`, `submit_agent_chat_task` (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/agents/tools/agent_management.py
 [64] Chạy thử `qwenpaw==2.2.1` (pip, Python 3.13, Linux) với một server model giả OpenAI-compatible ở local, 2026-10-26 — tự thực hiện, log chi tiết trong `notes/api-chat.md` (bậc 1 cho hành vi quan sát được).
 [65] src/qwenpaw/pawapp/app.py (PawApp SDK: `@app.route`, `ctx.chat`) (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/pawapp/app.py
+[66] src/qwenpaw/agents/routing_chat_model.py và src/qwenpaw/agents/model_factory.py (`_resolve_model_slot_override`) (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/agents/model_factory.py
+[67] Models, mục "Generation Parameters" (docs, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/website/public/docs/models.en.md
+[68] src/qwenpaw/app/routers/providers.py (`ModelConfigRequest`, `PUT /models/{provider_id}/models/{model_id}/config`) (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/app/routers/providers.py
+[69] Chạy thử structured output trên `qwenpaw==2.2.1` với server model giả ghi lại request gửi tới backend, 2026-10-26 — tự thực hiện, log trong `notes/structured-output.md` (bậc 1 cho hành vi quan sát được).
