@@ -10,6 +10,7 @@
   4. Subagent / multi-agent: khái niệm agent workspace, tạo nhiều agent, giao việc giữa các agent, cấu hình (file nào, field nào), giới hạn?
   5. Các cấu hình liên quan khác: MCP, tools, memory, heartbeat/cron, bảo mật/sandbox; file cấu hình chính (config.json/agent.json…) và biến môi trường?
   6. Hạn chế, lỗi thường gặp, và mẹo thực tế từ cộng đồng (issues, discussions)?
+  7. *(bổ sung 2026-10-26)* Với QwenPaw chạy local, gọi API chat thế nào để lấy output; docs có mô tả cách gọi theo chuẩn nào (OpenAI-compatible hay chuẩn riêng)?
 - **Phạm vi:** Bản v2.2.1 (nếu không tồn tại thì bản gần nhất, ghi rõ). Ưu tiên tài liệu chính thức (GitHub repo, docs site, release notes, Alibaba Cloud Model Studio docs), rồi issues/discussions, bài blog. Giả định chủ repo chạy trên Linux/macOS, dùng cá nhân.
 - **Ngoài phạm vi:** So sánh sâu với OpenClaw/các agent khác (chỉ nhắc ngắn nếu cần), phát triển core của QwenPaw, đánh giá benchmark.
 - **Độ sâu:** sâu

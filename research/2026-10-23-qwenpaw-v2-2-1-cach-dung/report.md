@@ -2,16 +2,17 @@
 title: Cách dùng QwenPaw v2.2.1 — cài đặt, cấu hình skills và subagent
 date: 2026-10-23
 question: Với QwenPaw v2.2.1 (agentscope-ai/QwenPaw), cài đặt, dùng hằng ngày và cấu hình skills, subagent (multi-agent) cùng các thành phần liên quan như thế nào?
-tags: [qwenpaw, agentscope, ai-agent, skills, subagent, multi-agent]
+updated: 2026-10-26
+tags: [qwenpaw, agentscope, ai-agent, skills, subagent, multi-agent, rest-api]
 ---
 
 # QwenPaw v2.2.1: hai lớp cấu hình, skill đi qua pool, subagent là phiên phụ tạm thời
 
-> **Câu hỏi:** Cài, dùng hằng ngày và cấu hình skills, subagent/multi-agent của QwenPaw v2.2.1 thế nào? · **Ngày:** 2026-10-23 · **Phạm vi:** bản v2.2.1 (tag 2026-09-11), đối chiếu docs trong repo với source cùng tag; người dùng cá nhân trên Linux/macOS · **Kiểm chứng:** 62 khẳng định đã đối chiếu nguồn, 14 đã sửa
+> **Câu hỏi:** Cài, dùng hằng ngày và cấu hình skills, subagent/multi-agent của QwenPaw v2.2.1 thế nào? · **Ngày:** 2026-10-23 · **Phạm vi:** bản v2.2.1 (tag 2026-09-11), đối chiếu docs trong repo với source cùng tag; người dùng cá nhân trên Linux/macOS · **Kiểm chứng:** 62 khẳng định đã đối chiếu nguồn, 14 đã sửa · **Cập nhật 2026-10-26:** thêm mục gọi REST API chat, có chạy thử v2.2.1 với model giả
 
 ## Tóm tắt
 
-Dùng QwenPaw v2.2.1 tối thiểu gồm ba bước: cài bằng `pip install qwenpaw==2.2.1` trong venv (Python 3.11–3.13), chạy `qwenpaw init --defaults` rồi `qwenpaw app`, sau đó vào Console ở `http://127.0.0.1:8088/` để đặt model mặc định [2]. Bản v2.2.1 có thật, phát hành ngày **2026-09-11**, nhưng **không còn là bản mới nhất**: v2.2.2 ra ngày 2026-10-15 và v2.2.2.post1 ngày 2026-10-22 [1]. Cấu hình chia hai lớp. `~/.qwenpaw/config.json` giữ danh sách agent và vài thiết lập toàn cục. `~/.qwenpaw/workspaces/<agent_id>/agent.json` giữ mọi thứ của từng agent: channel, MCP, tools, model, heartbeat, bảo mật. API key nằm riêng trong `~/.qwenpaw.secret/` [3]. Skill là một thư mục chứa `SKILL.md` theo kiểu Anthropic. Skill nằm trong pool dùng chung, được broadcast sang workspace của từng agent, rồi được bật bằng Console hoặc `qwenpaw skills enable` [4]. "Subagent" theo nghĩa của QwenPaw là phiên phụ tạm thời của *chính agent đó*, sinh ra bằng tool `spawn_subagent`. Muốn có "chuyên gia" với model và persona riêng thì phải tạo agent riêng, rồi giao việc qua `chat_with_agent` hoặc `submit_to_agent` [5][6]. Các điểm trên đều chắc chắn cao, vì đã đọc cả docs lẫn source ở tag v2.2.1. Tuy vậy, docs lệch với source ở khá nhiều chi tiết, và một số bản sửa quan trọng (timeout của `chat_with_agent`, kiểm tra tên skill) chỉ có ở v2.2.2.
+Dùng QwenPaw v2.2.1 tối thiểu gồm ba bước: cài bằng `pip install qwenpaw==2.2.1` trong venv (Python 3.11–3.13), chạy `qwenpaw init --defaults` rồi `qwenpaw app`, sau đó vào Console ở `http://127.0.0.1:8088/` để đặt model mặc định [2]. Bản v2.2.1 có thật, phát hành ngày **2026-09-11**, nhưng **không còn là bản mới nhất**: v2.2.2 ra ngày 2026-10-15 và v2.2.2.post1 ngày 2026-10-22 [1]. Cấu hình chia hai lớp. `~/.qwenpaw/config.json` giữ danh sách agent và vài thiết lập toàn cục. `~/.qwenpaw/workspaces/<agent_id>/agent.json` giữ mọi thứ của từng agent: channel, MCP, tools, model, heartbeat, bảo mật. API key nằm riêng trong `~/.qwenpaw.secret/` [3]. Skill là một thư mục chứa `SKILL.md` theo kiểu Anthropic. Skill nằm trong pool dùng chung, được broadcast sang workspace của từng agent, rồi được bật bằng Console hoặc `qwenpaw skills enable` [4]. "Subagent" theo nghĩa của QwenPaw là phiên phụ tạm thời của *chính agent đó*, sinh ra bằng tool `spawn_subagent`. Muốn có "chuyên gia" với model và persona riêng thì phải tạo agent riêng, rồi giao việc qua `chat_with_agent` hoặc `submit_to_agent` [5][6]. Các điểm trên đều chắc chắn cao, vì đã đọc cả docs lẫn source ở tag v2.2.1. Tuy vậy, docs lệch với source ở khá nhiều chi tiết, và một số bản sửa quan trọng (timeout của `chat_with_agent`, kiểm tra tên skill) chỉ có ở v2.2.2. Muốn gọi QwenPaw từ script để lấy output thì dùng REST API riêng `POST /api/console/chat`. API này theo giao thức của **AgentScope Runtime** (có docs chính thức), trả SSE, và **không** phải chuẩn OpenAI-compatible [60][61].
 
 **Điểm chính**
 - v2.2.1 là bản nhỏ sau v2.2.0. Nó thêm model routing riêng cho từng agent, preload skill, Make Skill nâng cấp và kiểm tra dependency của skill. Hub, Mail và Data đã có từ v2.2.0 [7][8].
@@ -19,6 +20,7 @@ Dùng QwenPaw v2.2.1 tối thiểu gồm ba bước: cài bằng `pip install qw
 - Skill tự viết chỉ cần `name` và `description` trong frontmatter. Skill đặt tay vào thư mục ở trạng thái **tắt** cho tới khi bật lên. Skill Scanner mặc định chỉ `warn` chứ không chặn [4][10].
 - `spawn_subagent` chờ tối đa **600 giây** ở foreground. Batch chạy tối đa **10** task, cùng lúc **3** task. Timeout là tham số model truyền vào tool, không phải cấu hình toàn cục [6][11].
 - Sandbox **mặc định tắt**, Console **không có đăng nhập** mặc định, và tool agent-to-agent được bật sẵn [12][10][13].
+- Gọi chat từ ngoài: `POST http://127.0.0.1:8088/api/console/chat` với header `X-Agent-Id`, luôn trả SSE. Text cuối nằm trong event `object: "response"` có `status: "completed"`. Không có `/v1/chat/completions`. Cần JSON một lần thì dùng `POST /api/console/chat/task` rồi poll [60][61][63].
 
 ## v2.2.1 có thật, nhưng người cài mới hôm nay sẽ nhận v2.2.2
 
@@ -67,6 +69,69 @@ Nâng cấp bằng `qwenpaw update` (pip) hoặc chạy lại script. Gỡ bằn
 **Bắt buộc** phải đặt model: vào Settings → Models, cấu hình provider và chọn Default LLM [2]. Bản cài mới mặc định dùng router miễn phí `kilo-auto/free`. Issue #8218 cho thấy model free có thể bị khai tử (`mimo-v2.5-free`), làm agent báo `MODEL_EXECUTION_ERROR` [21]. Provider cloud có sẵn gồm DashScope, ModelScope, Aliyun Coding Plan, OpenAI, Azure OpenAI, Anthropic, Gemini, DeepSeek, Kimi, MiniMax, Zhipu, OpenRouter, SiliconFlow, Volcengine, MiMo, GitHub Models, Kilo [22]. Model local có ba lựa chọn. QwenPaw Local (llama.cpp) còn thử nghiệm và chỉ chạy một model một lúc. Ollama (`localhost:11434`) cần context **≥ 32k**; khi chạy QwenPaw trong Docker thì thêm `--add-host=host.docker.internal:host-gateway`. LM Studio (`http://localhost:1234/v1`) cần Default Context Length ≥ 32768 và bật tách `reasoning_content`. Server OpenAI-compatible tự dựng (ví dụ vLLM `http://localhost:8000/v1`) thêm qua Add Provider [22]. FAQ giải thích lý do: context dưới 32K làm agent quên chỉ dẫn và gãy tool call nhiều lượt [15].
 
 Channel cấu hình ở Console → Control → Channels, hoặc trong `agent.json` → `channels`. Các channel chính trong brief đều chạy được từ laptop mà không cần IP public. DingTalk dùng Stream mode (`client_id`, `client_secret`). Feishu/Lark dùng WebSocket (`app_id`, `app_secret`, `domain`, cần `lark-oapi`, và phải chạy `qwenpaw app` trước). Discord cần `bot_token` và bật Message Content Intent. Telegram dùng `bot_token` từ @BotFather. Cả Discord và Telegram có `http_proxy`. Slack dùng Socket Mode. Ngược lại, voice Twilio cần URL HTTPS public, iMessage chỉ chạy trên macOS, và WeChat iLink là beta giới hạn [23].
+
+## Gọi API chat từ script: chuẩn AgentScope Runtime qua SSE, không phải OpenAI-compatible
+
+**Có docs, và chuẩn là của AgentScope Runtime.** Trang RESTful API (`api-tutorial.en.md`, ở tag v2.2.1 giống hệt nhánh main) ghi rõ: "QwenPaw's API is based on an extension of the AgentScope Runtime protocol", kèm link https://runtime.agentscope.io/en/protocol.html [60]. Docs chỉ nói body "similar to OpenAI's message format". Source không có route nào nhận request kiểu OpenAI: các chuỗi `chat/completions` hay `compatible-mode` trong source đều là code QwenPaw **gọi ra** provider [61]. Khi chạy thử, `POST /v1/chat/completions`, `/api/v1/chat/completions` và `/api/chat/completions` đều trả **405** [64]. Server cũng không mở Swagger: `/api/openapi.json` và `/docs` trả 404. Vì vậy client OpenAI SDK, LangChain `ChatOpenAI` hay Open WebUI **không trỏ thẳng vào QwenPaw được**. Có ba cách khác: viết client theo định dạng dưới đây, dùng `qwenpaw acp` (Agent Client Protocol, JSON-RPC qua stdio, dành cho Zed và các editor ACP) [62], hoặc tự viết một route HTTP bằng PawApp/plugin rồi gọi `ctx.chat(...)` bên trong [65].
+
+**Request.** Endpoint là `POST /api/console/chat` (thiếu `/api` sẽ bị 405). Header `X-Agent-Id` chọn agent, mặc định `default`; sai id thì nhận 404 `Agent '<id>' not found`. Gọi từ `127.0.0.1`/`::1` thì bỏ qua đăng nhập, kể cả khi đã bật `QWENPAW_AUTH_ENABLED`. Gọi từ máy khác thì cần `Authorization: Bearer <token>`, token lấy từ `POST /api/auth/login` (`expires_in` tính bằng giây, `0` là vĩnh viễn) [60].
+
+```bash
+curl -N -X POST http://127.0.0.1:8088/api/console/chat \
+  -H "Content-Type: application/json" -H "X-Agent-Id: default" \
+  -d '{"input":[{"role":"user","content":[{"type":"text","text":"Tóm tắt việc hôm nay"}]}],
+       "session_id":"job-001","user_id":"script","channel":"console"}'
+```
+
+Ba điểm khác OpenAI cần nhớ, lấy từ source và đã kiểm bằng chạy thử [61][64]:
+- **`input` không phải lịch sử hội thoại.** Lịch sử do server giữ theo `session_id` (và `user_id`). Gửi hai message trong `input` thì server gộp thành **một** lượt user có hai đoạn text. Muốn hỏi nối tiếp thì gửi lại cùng `session_id`. Khi chạy thử, lượt 2 server gửi cho model 4 message: system, user, assistant, user.
+- **Thiếu `session_id` thì mọi request dồn vào một phiên tên `"default"`.** Request sau thấy lịch sử của request trước. Mỗi việc độc lập nên có `session_id` riêng, ví dụ một UUID. Đây cũng là lý do lượt đầu của mỗi phiên mới gọi model **hai lần**: một lần để trả lời, một lần để sinh tiêu đề chat.
+- **`"stream": false` không có tác dụng.** Schema `AgentRequest` có field `stream` (mặc định `true`), nhưng handler luôn trả `text/event-stream`. Run vẫn chạy tiếp khi client ngắt kết nối. Dừng bằng `POST /api/console/chat/stop?chat_id=<session_id>`, nối lại bằng body có `"reconnect": true` [61].
+
+**Response: lấy output ở event cuối.** Chạy thử một lượt không gọi tool cho ra 9 dòng `data:` theo thứ tự sau [64]:
+
+| # | `object` / `type` | Nội dung |
+|---|---|---|
+| 1–2 | `response`, status `created` → `in_progress` | `id`, `session_id`, `output: []` |
+| 3 | `message`, status `in_progress` | message assistant, content rỗng |
+| 4–5 | `content`, `delta: true` | từng mảnh text (stream token) |
+| 6 | `content`, `delta: false` | cả đoạn text |
+| 7 | `message`, status `completed` | message đầy đủ |
+| 8 | `response`, status `completed` | `output` (danh sách message), `usage: {input_tokens, output_tokens}`, `completed_at` |
+| 9 | `type: "turn_usage"` | token theo provider/model, cache |
+
+Docs mô tả gọn hơn (chỉ nói tới event `response`). Hai loại `message`/`content` là định dạng của AgentScope Runtime [60][64]. Cách chắc nhất để lấy output giống cách QwenPaw tự làm khi agent gọi agent: đọc hết stream, giữ event `response` cuối, rồi lấy text của các message assistant [63]. Khi agent có gọi tool, `output` còn chứa các message `type` là `function_call`, `function_call_output`, `mcp_tool_call`, `reasoning`…, nên cần lọc `type == "message"` [61]. Hàm dưới đây đã chạy đúng trên v2.2.1, trả `('PONG-from-fake-llm', {'input_tokens': 10, 'output_tokens': 3}, 'api-682aeac5')` [64]:
+
+```python
+import json, uuid, requests
+
+BASE = "http://127.0.0.1:8088/api"
+
+def ask(text, session_id=None, agent_id="default", timeout=600):
+    """Gửi 1 tin, đọc hết SSE, trả về (text cuối, usage, session_id)."""
+    session_id = session_id or f"api-{uuid.uuid4().hex[:8]}"
+    body = {"input": [{"role": "user", "content": [{"type": "text", "text": text}]}],
+            "session_id": session_id, "user_id": "script", "channel": "console"}
+    final = None
+    with requests.post(f"{BASE}/console/chat", json=body, stream=True,
+                       headers={"X-Agent-Id": agent_id}, timeout=timeout) as r:
+        r.raise_for_status()
+        for line in r.iter_lines(decode_unicode=True):
+            if line and line.startswith("data: "):
+                ev = json.loads(line[6:])
+                if ev.get("object") == "response" and ev.get("status") in ("completed", "failed"):
+                    final = ev
+    if final is None:
+        raise RuntimeError("stream ended without a final response event")
+    if final.get("status") == "failed" or final.get("error"):
+        raise RuntimeError(final.get("error"))
+    texts = [c["text"] for m in final.get("output", [])
+             if m.get("type") == "message" and m.get("role") == "assistant"
+             for c in m.get("content", []) if c.get("type") == "text"]
+    return "\n".join(texts).strip(), final.get("usage"), session_id
+```
+
+**Không muốn đọc SSE: task nền rồi poll.** `POST /api/console/chat/task` nhận cùng body, thêm `timeout` tính bằng giây (mặc định 3600). Nó trả ngay `{"task_id": "task-…", "timeout": …}`. Sau đó poll `GET /api/console/chat/task/{task_id}`: khi còn chạy thì nhận `{"status": "running"}`, khi xong thì nhận `{"status": "finished", "result": {"status": "completed" | "failed", "output": [...], "usage": …, "error": …}}` [61][9]. Endpoint này không có trong trang API tutorial. Nó là cơ chế đứng sau tool `submit_to_agent` và lệnh `qwenpaw agents chat --background` [63][58]. Task được giữ trong bộ nhớ, nên restart server là mất kết quả chưa lấy. Chạy thử với `timeout: 120`: poll ngay thì nhận `running`, sau 3 giây thì nhận `finished` kèm đúng text [64]. Từ shell còn có thể gọi `qwenpaw agents chat --from-agent default --to-agent <id> --text "…" [--session-id …] [--timeout 300]`, lệnh này gọi chính API trên [58].
 
 ## Cấu hình nằm ở hai lớp: `config.json` toàn cục và `agent.json` của từng agent
 
@@ -290,6 +355,7 @@ Docs trong repo ở tag v2.2.1 lệch với source cùng tag ở ít nhất mư�
 | Skill builtin | bảng 14 dòng, có `news` [4] | 16 skill, không có `news`, có thêm `chat_with_agent`, `make-skill`, `make_plan` [25] | kiểm bằng `qwenpaw skills list --pool` |
 | Chữ ký Skill Scanner | có `resource_abuse` [10] | 8 file, không có `resource_abuse` [51] | lớp quét mỏng hơn docs mô tả |
 | `running.max_iters` | ví dụ JSON ghi 50 | 100 [12] | |
+| SSE của `/api/console/chat` | chỉ nói tới event `object: "response"` [60] | còn có event `message`, `content` (delta) và `turn_usage`; `stream: false` bị bỏ qua [61][64] | parser chỉ nên lấy event `response` cuối |
 | `language` mặc định | ví dụ ghi `en` | `zh`; `init --defaults` dùng `zh` [12][39] | persona sinh ra bằng tiếng Trung nếu không đổi |
 | Heartbeat `every` | bảng config ghi `30m` [3] | `6h` (docs heartbeat cũng ghi khoảng 6 giờ) [9][41] | |
 | MCP mặc định | tự tạo client `tavily_search` [35] | client mặc định là `anysearch` (tắt); Tavily là provider của tool `web_search` [12][37] | đặt `TAVILY_API_KEY` để có web search, không phải MCP |
@@ -313,6 +379,7 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 - Chưa đọc schema đầy đủ của `policy.yaml`, `providers.json` (có mã hóa bằng master key hay không) và `jobs.json`.
 - Chưa xác minh việc sửa `mcp.clients` sau migration có còn được runtime đọc hay không. Chưa xác minh giới hạn độ sâu lồng subagent bằng chạy thật (grep `depth`, `nested`, `MAX_DEPTH` không ra kết quả).
 - Chưa đo độ trễ thực tế của pipeline gắn nhãn comment (subagent theo batch, agent `labeler` riêng, gọi thẳng API); các khuyến nghị về cỡ batch và định dạng đầu ra là nhận định từ source và cơ chế sinh token. Chưa kiểm giới hạn 3 luồng đồng thời có áp dụng khi gọi nhiều lần `spawn_subagent` batch song song hay không. Chưa xác nhận skill bật `preload` có được chèn vào prompt của subagent hay không, và chưa đo kích thước thật của các khối ngữ cảnh môi trường.
+- API chat mới chạy thử với model giả, lượt không gọi tool. Chưa thử với model thật và tool nhiều bước, chưa thử gọi từ máy khác khi bật auth, chưa thử `reconnect` và `/chat/stop`. Chưa đọc trực tiếp trang protocol của AgentScope Runtime; bảng event ở trên lấy từ chạy thật [64].
 - Chưa thử chạy skill OpenClaw hay Claude Code thật. Các field frontmatter riêng của Claude Code (`allowed-tools`, `disable-model-invocation`) không thấy xử lý trong source, nhiều khả năng bị bỏ qua.
 - Không mở được docs site `qwenpaw.agentscope.io`, help.aliyun.com, IT之家, AIbase (lỗi DNS). GitHub API và search bị chặn (403), nên chỉ duyệt trang đầu danh sách issue. Không tìm thấy blog hay hướng dẫn cộng đồng bậc 2 nào (truy vấn: "QwenPaw skills issue github SKILL.md", "QwenPaw issue MCP sandbox approval config github", "QwenPaw github issue install error qwenpaw app").
 
@@ -377,3 +444,9 @@ Hàm ý thực tế là nên cài v2.2.2.post1 thay vì pin v2.2.1, trừ khi c�
 [57] src/qwenpaw/modes/mission/prompts.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/modes/mission/prompts.py
 [58] src/qwenpaw/cli/agents_cmd.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/cli/agents_cmd.py
 [59] src/qwenpaw/agents/tools/file_io.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/agents/tools/file_io.py
+[60] RESTful API (docs `api-tutorial.en.md`, tag v2.2.1; giống hệt bản main 2026-10-26) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/website/public/docs/api-tutorial.en.md
+[61] src/qwenpaw/app/routers/console.py, src/qwenpaw/schemas.py, src/qwenpaw/app/channels/console/channel.py (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/app/routers/console.py
+[62] ACP Integration, mục "QwenPaw as an ACP Server" (docs, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/website/public/docs/acp-integration.en.md
+[63] src/qwenpaw/agents/tools/agent_management.py: `collect_final_agent_chat_response`, `extract_agent_text_content`, `submit_agent_chat_task` (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/agents/tools/agent_management.py
+[64] Chạy thử `qwenpaw==2.2.1` (pip, Python 3.13, Linux) với một server model giả OpenAI-compatible ở local, 2026-10-26 — tự thực hiện, log chi tiết trong `notes/api-chat.md` (bậc 1 cho hành vi quan sát được).
+[65] src/qwenpaw/pawapp/app.py (PawApp SDK: `@app.route`, `ctx.chat`) (source, tag v2.2.1) — agentscope-ai, 2026-09-11 (bậc 1). https://github.com/agentscope-ai/QwenPaw/blob/v2.2.1/src/qwenpaw/pawapp/app.py
