@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "catncockroach - Creates git commits in this repo's house style (an all-lowercase `brief title: detail` subject, a few `- ` bullet lines, a single Co-Authored-By trailer), then pushes the branch and opens or updates its pull request without asking. Use whenever a task in this repo has changed files and is done, or the user says commit, commit đi, tạo commit, lưu thay đổi, push, tạo pr, even if they don't mention the message format. Never merges a pull request; not for rewriting history."
+description: "catncockroach - Creates git commits in this repo's house style (an all-lowercase `brief title: detail` subject, a few `- ` bullet lines, Co-Authored-By trailers only: the agent, plus the owner in cloud sessions), then pushes the branch and opens or updates its pull request without asking. Use whenever a task in this repo has changed files and is done, or the user says commit, commit đi, tạo commit, lưu thay đổi, push, tạo pr, even if they don't mention the message format. Never merges a pull request; not for rewriting history."
 argument-hint: "[gợi ý nội dung commit]"
 allowed-tools: Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *) Bash(git fetch *) Bash(git checkout *) Bash(git stash *) Bash(git push *)
 ---
@@ -16,18 +16,20 @@ The owner wants finished work committed, pushed and opened as a pull request **w
 - <what changed>
 
 Co-Authored-By: <agent trailer>
+Co-Authored-By: catncockroach <hai.hv04@gmail.com>   # cloud sessions only
 ```
 
 ## Message rules
 
-- **Lowercase everything** you write: subject, bullets, file and folder names (`update claude.md`, not `update CLAUDE.md`). The owner wants no capitals at all. The trailer is the one exception (see below).
+- **Lowercase everything** you write: subject, bullets, file and folder names (`update claude.md`, not `update CLAUDE.md`). The owner wants no capitals at all. The trailers are the one exception (see below).
 - **Subject**: `<brief title>: <detail>`, no trailing period.
   - `brief title` is free-form: a few words (often 1–4) naming what the commit is about, phrased however reads best. It is not a fixed scope list: `more agent's skill`, `dns notes`, `networking foundations`, `research reports` are all fine.
   - `detail` says what the commit does, in a few words (`grilling`, `add commit skill`, `fix broken links`).
 - **Bullets**: 1–4 lines starting with `- `, each one concrete change, at most ~72 chars. Say *what* and, when not obvious, *why*. Skip filler like "update files".
 - **Language**: English, even though notes in the repo are Vietnamese. Vietnamese proper nouns or quoted titles may stay as they are, lowercased.
 - **Trailer**: copy the `Co-Authored-By:` line from the commit attribution in your system context verbatim (it names the current model, so do not hard-code it). If there is none, use `Co-Authored-By: Claude <noreply@anthropic.com>`. Keep its capitalisation, since git and GitHub parse the trailer by that exact key.
-- **Only that one trailer.** The message ends on the `Co-Authored-By:` line. Drop every other trailer or link the attribution suggests, such as `Claude-Session:` or a claude.ai session URL: they point to the owner's private session and do not belong in the repo history. The repo's `CLAUDE.md` sets the same rule, and the attribution text itself yields to the owner's instructions, so this rule wins.
+- **Owner trailer in cloud sessions**: when the commit is made in a Claude Code cloud session (check with `echo "$CLAUDE_CODE_REMOTE"`: it prints `true`), add `Co-Authored-By: catncockroach <hai.hv04@gmail.com>` on the line right after the agent trailer, so the owner is credited for commits made from the phone or web. In a local session (variable empty or unset), leave it out: the owner is already the commit author there.
+- **No other trailers.** The message ends on the `Co-Authored-By:` line(s). Drop every other trailer or link the attribution suggests, such as `Claude-Session:` or a claude.ai session URL: they point to the owner's private session and do not belong in the repo history. The repo's `CLAUDE.md` sets the same rule, and the attribution text itself yields to the owner's instructions, so this rule wins.
 
 Examples:
 
@@ -38,7 +40,10 @@ agent skills: add commit
 - note the commit convention in claude.md
 
 Co-Authored-By: <attribution line from your context>
+Co-Authored-By: catncockroach <hai.hv04@gmail.com>
 ```
+
+(cloud session: both trailers)
 
 ```
 dns notes: fix ttl typo
@@ -47,6 +52,8 @@ dns notes: fix ttl typo
 
 Co-Authored-By: <attribution line from your context>
 ```
+
+(local session: agent trailer only)
 
 ## Current state
 
@@ -90,12 +97,13 @@ brief title: detail
 - change two
 
 Co-Authored-By: ...
+Co-Authored-By: catncockroach <hai.hv04@gmail.com>   # only if $CLAUDE_CODE_REMOTE is true
 EOF
 ```
 
 If a hook rejects the commit, fix the cause, re-stage and make a **new** commit. Keep hooks on (no `--no-verify`) and leave earlier commits as they are (no `--amend`) unless the user asks.
 
-Done when `git log -1 --format=%B` prints a message that follows every rule above: re-read it against them, letter case included, and check that its last line is the `Co-Authored-By:` line with no other trailer.
+Done when `git log -1 --format=%B` prints a message that follows every rule above: re-read it against them, letter case included, and check that it ends on the `Co-Authored-By:` line(s) with no other trailer: the agent line, then, in a cloud session, the owner line.
 
 ## 4. Push and open the PR
 
