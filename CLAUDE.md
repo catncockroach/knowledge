@@ -18,7 +18,7 @@ Khi được yêu cầu viết kiến thức cơ sở, cốt lõi hay nền tả
 
 ## Commit
 
-Mỗi khi tạo commit, dùng skill `commit`: subject `brief title: detail` viết thường toàn bộ (brief title tự do, vài từ), vài dòng `- ` mô tả, kết thúc bằng trailer `Co-Authored-By` của agent và không có trailer nào khác (không `Claude-Session`, không link session). Làm xong một việc có thay đổi file thì tự commit, push lên branch đang làm và tạo (hoặc cập nhật) PR, không cần hỏi. Không tự merge PR; chủ repo merge. Mô tả PR cũng không chứa link session.
+Mỗi khi tạo commit, dùng skill `commit`: subject `brief title: detail` viết thường toàn bộ (brief title tự do, vài từ), vài dòng `- ` mô tả, kết thúc bằng trailer `Co-Authored-By` của agent, trong cloud session (`CLAUDE_CODE_REMOTE=true`) thêm dòng `Co-Authored-By: catncockroach <hai.hv04@gmail.com>`, và không có trailer nào khác (không `Claude-Session`, không link session). Làm xong một việc có thay đổi file thì tự commit, push lên branch đang làm và tạo (hoặc cập nhật) PR, không cần hỏi. Không tự merge PR; chủ repo merge. Mô tả PR cũng không chứa link session.
 
 ## Skill của repo
 
