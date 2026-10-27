@@ -16,6 +16,7 @@ tags: [cve, detection-engineering, llm-agent, sandbox, telemetry, kev]
 **Điểm chính**
 - Phản ứng nhanh = nén **giờ đầu** để có detection kiểm chứng và hunt, chứ không vá nhanh hơn: với ~20–30% CVE đã bị khai thác trước công bố, vá kiểu gì cũng đến sau, giá trị duy nhất là hunt hồi tố và mitigation tạm [3][4][5].
 - Output là một **gói chuẩn hóa** (advisory + affected.json + exposure check + detections có test + hunts + IoC + mitigation + coverage statement), không phải một con số; mỗi mục có một "đồng hồ" riêng [1][7][8].
+- **Chất lượng PoC trong TI quyết định nhánh.** Ba trường hợp đầu vào tách bạch: PoC giả → oracle loại sớm (và cảnh giác ~10% repo PoC độc); PoC đủ → tự động hóa cao nhất; chỉ có root-cause + patch diff → agent viết PoC chỉ đạt ~18% (SEC-bench), nên để chuyên gia, agent chỉ dọn đường [10][37][67].
 - **Dựng môi trường là bottleneck.** FORGE: 172/590 CVE trượt ngay ở bước generation, app chạy được thì khai thác tới ~96,6%; Rust và TypeScript khó nhất, PHP dễ nhất (93/100) (tự tính từ forge-artifacts) [11].
 - **Agent hay giả kết quả.** CVE-Factory: 187/499 ca "thành công" rớt khi duyệt tay, kiểu lỗi hàng đầu là mock (35,9%) và test tĩnh grep source thay vì chạy tấn công (35,2%); phải "dựng mù", oracle do orchestrator chạy, và có bộ dò mock [12].
 - **"Telemetry" của FORGE là span tool-call của agent, không phải sensor host**; log chuẩn mù với nhiều exploit web (SETC: 27/32 lỗ hổng chỉ-qua-POST không thấy được vì log không ghi body) [11][13]. Pipeline doanh nghiệp phải gắn sensor thật (Suricata/Zeek, Sysmon/auditd/eBPF, EDR) song song với nhãn của agent.
@@ -66,6 +67,24 @@ Phần còn lại của report đi theo đúng chuỗi mà chủ repo mô tả. 
 | 8. Con người duyệt → deploy / hunt | Con người | quyết định bật rule, chạy hunt, mở ticket vá | bắt buộc trước chế độ chặn, mitigation, merge patch |
 
 Mức tự động hóa nên theo độ *đảo ngược được* của hành động [18][19]: đọc/tóm tắt/đối chiếu inventory/tính tầng ưu tiên — tự động hoàn toàn khi mọi khẳng định có trích dẫn; tái hiện PoC và chạy thử rule trên log lịch sử — tự động *trong sandbox đã kiểm chứng cách ly*, kết quả kiểm bằng oracle tất định; đưa rule lên production, áp WAF rule, mở ticket vá khẩn — cần người duyệt sau khi có test dương và âm; vá/restart production, công bố PoC, thay đổi không đảo ngược — luôn do người làm.
+
+## Định tuyến đầu vào: chất lượng PoC quyết định nhánh tự động hóa
+
+Trước khi chạy dây chuyền, pipeline phải **phân loại đầu vào TI theo provenance và chất lượng PoC**, vì mức tự động hóa khả thi khác hẳn nhau theo loại đầu vào — không phải cứ nhận CVE là chạy hết tám khâu. Lấy chính ví dụ PHP2Shell: cùng một CVE, TI có thể đến dưới ba dạng, và kỳ vọng hợp lý với agent (khớp với bằng chứng ở khâu 3–4) là:
+
+| TH | Đầu vào TI | Oracle nói gì | Nhánh | Mức tự động |
+|---|---|---|---|---|
+| 1 | Repo gắn mác "PoC" nhưng **không khai thác được** (bait, rác, hoặc chứa mã độc) | không tạo khác biệt lỗi/vá, không đạt marker | **loại sớm**, gắn `fake/unverified`, cảnh báo nếu có dấu hiệu độc | cao — chạy trong sandbox, oracle tự kết luận |
+| 2 | **Chỉ có phân tích root-cause + patch diff**, chưa có PoC | chưa có gì để chạy | **chuyển chuyên gia**; agent chỉ hỗ trợ (dựng sẵn môi trường lỗi/vá, trích điểm trigger từ diff) | thấp — human-in-the-loop |
+| 3 | **PoC hoàn chỉnh, chạy được** | đạt oracle, có khác biệt lỗi/vá | **tự động hóa đầy đủ**: dựng → chạy → thu log → sinh rule | cao nhất |
+
+**Nhận định — và vì sao thứ tự khó lại đúng như kỳ vọng của chủ repo:**
+
+- **TH1 (loại PoC giả) là ứng dụng trực tiếp của oracle ở khâu 4.** Phép thử "PoC có thật sự làm đổi trạng thái, và có khác nhau giữa bản lỗi với bản vá không" chính là cơ chế lọc: PoC không đạt oracle thì đánh dấu giả hoặc không kiểm chứng được, dừng ngay, không tốn khâu 5–8. Đây đúng là cách CVE-Genie và XBOW dùng "exploit kiểm chứng được" để loại báo cáo rác [10]. Rủi ro đi kèm: khoảng **10%** repo PoC trên GitHub có dấu hiệu độc (Leiden), và React2Shell từng có PoC chứa malware nhắm nhà nghiên cứu [67][39] — nên nhánh này bắt buộc chạy trong sandbox cách ly, không quyền cao, coi nội dung repo là **dữ liệu không tin cậy** (quét trước khi chạy, phòng cả prompt injection trong README).
+- **TH3 (PoC đủ) là nhánh ROI cao nhất và nên làm trước.** Khi đã có artifact chạy được, bài toán rút về đúng kịch bản FORGE/CVE-Genie/CVE-Factory: dựng môi trường, chạy, thu telemetry, sinh rule — gần như tự động, vài phút tới vài chục phút và vài USD mỗi CVE [11][10][12]. Vẫn cần oracle và bộ dò mock, vì "PoC chạy được" không đồng nghĩa "đã kích hoạt đúng lỗ hổng".
+- **TH2 (chỉ root cause + diff) là nhánh khó nhất, đúng như chủ repo đánh giá.** "Viết PoC từ mô tả/patch" là phần agent yếu và dễ ảo giác nhất: SEC-bench đo sinh PoC chỉ tối đa **~18%**, và biến số quyết định là lượng thông tin đầu vào (có mô tả/PoC sẵn thì tỷ lệ cao hơn hẳn so với chỉ có mã nguồn) [37][34]. Vai trò hợp lý của agent ở đây là **dọn đường cho chuyên gia** — dựng sẵn cặp môi trường lỗi/vá, đọc patch diff để khoanh hàm/điều kiện thay đổi, đề xuất điểm trigger — rồi gate cho người viết PoC, không coi là tự động. Dù vậy một phần vẫn chạy tự động được ngay cả khi chưa có PoC: khâu 1–2 (exposure, ưu tiên) và nhánh fallback V3 ở cuối report (sinh rule từ patch diff/advisory, gắn nhãn `unverified`).
+
+Điểm chung: output mỗi nhánh phải **ghi rõ mức kiểm chứng** (xem thang V1–V4 ở mục fallback). "Rule sinh từ exploit trace đã đạt oracle" (TH3) đáng tin hơn hẳn "rule suy từ mô tả, PoC chưa chạy được" (TH2 fallback); trộn lẫn hai mức này là cách nhanh nhất làm SOC mất niềm tin vào content tự động.
 
 ## Khâu 1–2 — Intel và lọc: trigger không nên là "CVE mới trên NVD"
 
@@ -210,7 +229,7 @@ Agent không thu hẹp khoảng hở bằng cách "vá nhanh hơn" — vá bị 
 Với chủ repo (SOC/detection engineering muốn xây nội bộ), thứ tự đầu tư hợp lý và các quyết định thiết kế chính:
 
 1. **Lớp dữ liệu tất định trước** (CVE JSON 5 gồm ADP, KEV, EPSS, CSAF/OSV, khớp inventory) — đây là khâu 1–2, không cần LLM và chặn được rủi ro bịa version.
-2. **Chọn lớp CVE mục tiêu, và có fallback cho ca không dựng được.** **Nhận định:** nhắm trước vào web app / library có source (V1), nơi tỷ lệ dựng thành công cao và telemetry khớp production; appliance/firmware/kernel chuyển thẳng sang V3–V4 (rule từ patch diff/advisory gắn nhãn `unverified`, hoặc chỉ hunt query). Analyzer phải nhận diện sớm và không cố dựng cái không dựng được.
+2. **Định tuyến đầu vào theo chất lượng PoC trước, rồi mới chọn lớp CVE mục tiêu.** **Nhận định:** cổng đầu tiên là ba trường hợp TI — PoC giả (oracle loại sớm), PoC đủ (tự động hóa đầy đủ, làm trước vì ROI cao nhất), chỉ có root-cause + diff (gate cho chuyên gia, agent chỉ dựng sẵn môi trường và khoanh trigger). Sau cổng đó, nhắm trước vào web app / library có source (V1), nơi tỷ lệ dựng thành công cao và telemetry khớp production; appliance/firmware/kernel chuyển thẳng sang V3–V4 (rule từ patch diff/advisory gắn nhãn `unverified`, hoặc chỉ hunt query). Analyzer phải nhận diện sớm và không cố dựng cái không dựng được.
 3. **Oracle khách quan và chống mock là điều kiện sống còn**, không phải tính năng thêm: dựng mù, oracle do orchestrator chạy (vi sai lỗi/vá bất cứ khi nào có thể), bộ dò mock/fabrication, xóa `.git`.
 4. **Thu hai lớp telemetry, ưu tiên parity lab–production**: span agent làm nhãn, sensor thật làm nơi rule chạy; dùng cùng config sensor và kiểm schema theo integration như Elastic. **Câu hỏi mở:** chưa có chỉ số hay công cụ nào đo độ lệch lab–production.
 5. **Mọi rule qua harness đầy đủ** (cú pháp + engine + test dương trên sensor + test âm baseline + backtest production + test biến thể), không dừng ở grounding kiểu FORGE.
