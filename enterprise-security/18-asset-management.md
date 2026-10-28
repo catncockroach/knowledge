@@ -38,6 +38,20 @@ Không biết mình có gì thì không bảo vệ được.
   **Entity resolution** là việc xác định nhiều bản ghi từ nhiều nguồn là cùng một tài sản.
 - **Thời gian là một chiều của profile**: IP, owner, OS thay đổi theo thời gian. Một sự kiện phải được hiểu theo trạng thái tài sản *tại thời điểm xảy ra*, không theo trạng thái hiện tại.
 - **Criticality và risk**: *criticality* là giá trị của tài sản với nghiệp vụ, căn cứ vào dịch vụ nó phục vụ, dữ liệu nó giữ, vai trò hạ tầng (domain controller, PKI, backup là các tài sản "Tier 0") và mức phơi ra ngoài. *Risk* là khả năng tài sản bị tấn công thành công. Domain controller vá đầy đủ: criticality cao, risk thấp.
+- **Tài sản trong OCSF**: schema có sẵn chỗ cho từng phần của asset profile.
+  - Object `device` (mở rộng từ `endpoint`) là mô tả chuẩn của một máy:
+
+    | Nhóm attribute | Ví dụ | Dùng để |
+    |---|---|---|
+    | Định danh | `uid` (agent ID, ARN), `uid_alt` (vd AD DN), `instance_uid`, `hostname`, `name`, `domain` | nhận ra cùng một máy giữa các nguồn |
+    | Mạng | `ip`, `mac`, `subnet`, `zone`, `vlan_uid`, `vpc_uid`, `region`, `network_interfaces` | biết máy nằm ở đâu trong hạ tầng |
+    | Kỹ thuật | `type_id` (Server, Desktop, Laptop, Mobile, Virtual, IOT, Firewall...), `os`, `hw_info`, `vendor_name`, `model` | phân loại máy, biết OS và phần cứng |
+    | Tổ chức | `owner` (object `user`), `org` (tổ chức, đơn vị), `groups` | biết ai chịu trách nhiệm, thuộc nhóm nào |
+    | Tư thế bảo mật | `is_managed`, `is_compliant`, `is_trusted`, `agent_list`, `risk_level_id`, `risk_score` | biết máy có được quản lý, có agent gì, rủi ro ra sao |
+    | Vòng đời | `first_seen_time`, `last_seen_time`, `created_time`, `boot_time` | biết máy xuất hiện và hoạt động khi nào |
+
+    Trong OCSF 1.9.0, `device` không có attribute criticality; criticality xuất hiện ở `resources[].criticality_id` của finding hoặc trong `enrichments`.
+  - Category Discovery chứa các class inventory: Device Inventory Info (`5001`), User Inventory Info (`5003`), Operating System Patch State (`5004`), Software Inventory Info (`5020`), Cloud Resources Inventory Info (`5023`)... Chúng **dùng để** ghi trạng thái tài sản tại một thời điểm bằng cùng schema với log sự kiện. Category Findings có Vulnerability Finding (`2002`) cho lỗ hổng trên tài sản.
 
 ## Cách hoạt động
 ```
@@ -64,4 +78,4 @@ Lúc 02:00, `WS-0412` mở kết nối SMB tới 40 máy. Riêng event đó khô
 ## Liên quan
 - [06-vulnerability-management.md](06-vulnerability-management.md): inventory là tiền đề của quản lý lỗ hổng.
 - [03-frameworks-and-governance.md](03-frameworks-and-governance.md): NIST CSF, CIS Controls.
-- [18-asset-context-and-enrichment.md](18-asset-context-and-enrichment.md): log nuôi profile và profile làm giàu log.
+- [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md): log nuôi profile và profile làm giàu log.

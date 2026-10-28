@@ -48,4 +48,5 @@ Windows ghi event `4625` (đăng nhập thất bại) trên domain controller `D
 ## Liên quan
 - [07-logging-and-telemetry.md](07-logging-and-telemetry.md): chuẩn hóa trong đường đi của log.
 - [14-vendor-terminology-map.md](14-vendor-terminology-map.md): schema của từng vendor.
-- [16-ocsf-data-model.md](16-ocsf-data-model.md): cấu trúc của OCSF.
+- [16-ocsf-data-model.md](16-ocsf-data-model.md): các thành phần của OCSF và công dụng.
+- [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md): các nhóm field trong một event và cách đọc.

@@ -50,6 +50,6 @@ Không có ngữ cảnh, hai alert xếp hàng như nhau. Có ngữ cảnh, B đ
 - **"Dữ liệu sạch là đích đến"**: dữ liệu sạch là nền móng; giá trị nằm ở các quyết định nó giúp đưa ra.
 
 ## Liên quan
-- [17-asset-management.md](17-asset-management.md): asset profile là gì.
-- [18-asset-context-and-enrichment.md](18-asset-context-and-enrichment.md): ngữ cảnh đến từ đâu và gắn vào event thế nào.
+- [18-asset-management.md](18-asset-management.md): asset profile là gì.
+- [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md): ngữ cảnh đến từ đâu và gắn vào event thế nào.
 - [11-soc-organization.md](11-soc-organization.md): metric và alert fatigue.

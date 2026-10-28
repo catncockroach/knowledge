@@ -15,8 +15,8 @@ Phòng ngừa      04 identity · 05 defense controls · 06 vulnerability mgmt
 Phát hiện       07 logging → 08 SIEM → 09 detection engineering ← 10 threat intel
 Vận hành        11 SOC → 12 incident response → 13 SOAR/XDR
 Tham chiếu      14 vendor terminology map
-Dữ liệu         15 normalization → 16 OCSF data model
-Tài sản         17 asset management → 18 context & enrichment → 19 ứng dụng trong vận hành
+Dữ liệu         15 normalization → 16 OCSF data model → 17 OCSF event anatomy
+Tài sản         18 asset management → 19 context & enrichment → 20 ứng dụng trong vận hành
 ```
 
 Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
@@ -41,10 +41,11 @@ Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
 | [13-soar-xdr-and-automation.md](13-soar-xdr-and-automation.md) | SOAR, playbook, automation rule, EDR/NDR/XDR, sơ đồ luồng dữ liệu tổng thể. |
 | [14-vendor-terminology-map.md](14-vendor-terminology-map.md) | Bảng dịch thuật ngữ giữa Splunk, Sentinel, Elastic, Google SecOps, QRadar. |
 | [15-security-data-normalization.md](15-security-data-normalization.md) | Vì sao log phải chuẩn hóa (khác tên, nghĩa, giá trị, thời gian), parse khác normalize, vai trò ngữ nghĩa, bài toán N × M, vị trí của OCSF. |
-| [16-ocsf-data-model.md](16-ocsf-data-model.md) | Mô hình OCSF: category/class/activity, `type_uid`, ba kiểu bản ghi, object, profile; mỗi event trả lời câu hỏi nào ở field nào. |
-| [17-asset-management.md](17-asset-management.md) | Asset, vòng đời asset management, các cách phát hiện tài sản, ba lớp của asset profile, định danh tài sản, criticality khác risk. |
-| [18-asset-context-and-enrichment.md](18-asset-context-and-enrichment.md) | Quan hệ hai chiều giữa log và profile: event là một lần quan sát tài sản, enrichment đưa ngữ cảnh ngược vào event. |
-| [19-asset-context-in-security-operations.md](19-asset-context-in-security-operations.md) | Ngữ cảnh tài sản dùng vào việc gì trong phòng ngừa, phát hiện, ứng phó; vì sao severity khác priority. |
+| [16-ocsf-data-model.md](16-ocsf-data-model.md) | Các thành phần của OCSF và công dụng: dictionary, kiểu dữ liệu, object, category/class/activity, `type_uid`, kế thừa, requirement, enum, profile, extension, phiên bản. |
+| [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md) | Các nhóm field trong một event (phân loại, thời gian, kết quả, thực thể theo vai, finding, `observables`, `enrichments`, `metadata`, `unmapped`), mỗi nhóm dùng để làm gì và cách đọc một event. |
+| [18-asset-management.md](18-asset-management.md) | Asset, vòng đời asset management, các cách phát hiện tài sản, ba lớp asset profile, định danh tài sản, criticality khác risk, tài sản trong OCSF (`device`, class inventory). |
+| [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md) | Quan hệ hai chiều giữa log và profile: event là một lần quan sát tài sản, enrichment đưa ngữ cảnh ngược vào event. |
+| [20-asset-context-in-security-operations.md](20-asset-context-in-security-operations.md) | Ngữ cảnh tài sản dùng vào việc gì trong phòng ngừa, phát hiện, ứng phó; vì sao severity khác priority. |
 
 ## Thuật ngữ nền
 - **SIEM**: hệ thống tập trung log và chạy rule để sinh alert.

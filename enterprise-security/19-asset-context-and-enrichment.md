@@ -3,7 +3,7 @@
 > Log và asset profile nuôi nhau theo hai chiều: mỗi event đã chuẩn hóa là một lần quan sát tài sản, góp vào profile; ngược lại, profile được gắn vào event dưới dạng ngữ cảnh (enrichment) để event mang đủ nghĩa cho người và máy đọc.
 
 ## Tại sao cần biết
-Log nguồn chỉ biết những gì nó thấy: một hostname, một IP, có khi chỉ một agent ID. Câu hỏi cần trả lời lại nằm ngoài log: máy đó của ai, quan trọng đến đâu, có EDR không. Mặt khác, chính log là nguồn phát hiện tài sản đầy đủ và mới nhất ([17-asset-management.md](17-asset-management.md)). Hiểu quan hệ hai chiều này là hiểu vì sao log đã chuẩn hóa ([15-security-data-normalization.md](15-security-data-normalization.md)) có giá trị vượt ra ngoài detection.
+Log nguồn chỉ biết những gì nó thấy: một hostname, một IP, có khi chỉ một agent ID. Câu hỏi cần trả lời lại nằm ngoài log: máy đó của ai, quan trọng đến đâu, có EDR không. Mặt khác, chính log là nguồn phát hiện tài sản đầy đủ và mới nhất ([18-asset-management.md](18-asset-management.md)). Hiểu quan hệ hai chiều này là hiểu vì sao log đã chuẩn hóa ([15-security-data-normalization.md](15-security-data-normalization.md)) có giá trị vượt ra ngoài detection.
 
 ## Khái niệm cốt lõi
 - **Event là một lần quan sát (sighting)**: mỗi event khẳng định "tài sản X tồn tại, với thuộc tính Y, lúc T, theo nguồn S". Độ tin cậy tùy vai trò:
@@ -54,6 +54,6 @@ Cùng một lần gõ sai mật khẩu, nhưng giờ đọc được là: đích
 - **"Không khớp profile thì bỏ qua"**: tài sản không có trong profile chính là phát hiện: máy chưa quản lý, chưa có EDR, hoặc không phải của tổ chức.
 
 ## Liên quan
-- [16-ocsf-data-model.md](16-ocsf-data-model.md): object `device`, `enrichments`, `metadata`.
-- [17-asset-management.md](17-asset-management.md): ba lớp profile, định danh, thời gian.
-- [19-asset-context-in-security-operations.md](19-asset-context-in-security-operations.md): ngữ cảnh tài sản được dùng vào việc gì.
+- [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md): `device`, `observables`, `enrichments`, `metadata` dùng để làm gì.
+- [18-asset-management.md](18-asset-management.md): ba lớp profile, định danh, thời gian.
+- [20-asset-context-in-security-operations.md](20-asset-context-in-security-operations.md): ngữ cảnh tài sản được dùng vào việc gì.

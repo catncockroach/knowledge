@@ -1,70 +1,96 @@
 # OCSF data model
 
-> OCSF mô tả mọi bản ghi bảo mật bằng một cây phân loại (category → class → activity) cùng các object dùng chung; nhờ vậy, mọi event dù đến từ nguồn nào cũng được hiểu bằng cùng một cách đọc.
+> OCSF dựng schema từ một số thành phần cố định: dictionary attribute, kiểu dữ liệu, object, cây phân loại category → class → activity, mức bắt buộc, enum, profile, extension và phiên bản. Mỗi thành phần giải một vấn đề cụ thể của việc mô tả dữ liệu bảo mật từ nhiều nguồn.
 
 ## Tại sao cần biết
-Biết cấu trúc của schema là biết mỗi thông tin nằm ở đâu: máy, người, hành động, kết quả, ngữ cảnh. Đây là nền để hiểu cách một event được diễn giải, cách tài sản xuất hiện trong log ([17-asset-management.md](17-asset-management.md)) và cách ngữ cảnh được gắn vào event ([18-asset-context-and-enrichment.md](18-asset-context-and-enrichment.md)).
+Biết từng thành phần dùng để làm gì thì đọc được mọi class OCSF, kể cả class chưa gặp, và hiểu vì sao dữ liệu đã chuẩn hóa so sánh được với nhau. File này mô tả *khung* của schema. Những gì một event cụ thể chứa nằm ở [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md).
 
 ## Khái niệm cốt lõi
-- **Category → class → activity**:
-  - *Category* là nhóm lớn: System Activity (1), Findings (2), IAM (3), Network Activity (4), Discovery (5), Application Activity (6), Remediation (7).
-  - *Class* là một loại sự kiện, `class_uid = category_uid × 1000 + n`. Ví dụ Process Activity `1007`, Detection Finding `2004`, Authentication `3002`, Network Activity `4001`, Device Inventory Info `5001`.
-  - *Activity* là hành động trong class (`activity_id`). Ví dụ Process Activity có Launch, Terminate, Inject; Authentication có Logon, Logoff.
-  - **`type_uid = class_uid × 100 + activity_id`** định danh duy nhất "loại + hành động" trên toàn schema, vd Logon = `300201`.
-- **Ba kiểu bản ghi**:
-  - *Activity*: một việc đã xảy ra (process chạy, đăng nhập, kết nối mạng).
-  - *Finding*: một kết luận về việc đã xảy ra (alert, lỗ hổng, vi phạm tuân thủ).
-  - *Discovery/inventory*: trạng thái của một thứ tại một thời điểm (máy, phần mềm, user). OCSF chứa cả ba kiểu, nên log, alert và dữ liệu tài sản cùng nằm trong một mô hình.
-- **Attribute và object**: attribute là field có tên cố định trong một dictionary chung, cùng tên thì cùng nghĩa ở mọi class. Object là nhóm attribute lồng nhau dùng lại được. Các object quan trọng:
-  - `device`: máy nơi sự kiện được ghi nhận (observer);
-  - `src_endpoint`, `dst_endpoint`: nguồn và đích;
-  - `actor`: chủ thể (user, process, session);
-  - `user`, `process`, `file`, `metadata`.
-- **Requirement và enum**: attribute có mức required, recommended, optional. Giá trị liệt kê đi theo cặp `_id` + caption (`severity_id 4` / `High`); `0` là Unknown, `99` là Other.
-- **Profile và extension**: *profile* gắn thêm một nhóm attribute vào class khi ngữ cảnh phù hợp (`host` thêm `device` và `actor`; `security_control` thêm hành động và kết luận của control). *Extension* thêm class, object, attribute riêng mà không sửa schema lõi.
-- **Các field bao quanh nội dung**:
-  - `metadata`: xuất xứ của bản ghi (sản phẩm nguồn, phiên bản schema, mã event gốc, thời gian gốc);
-  - `observables[]`: danh sách phẳng các thực thể đáng chú ý (IP, hostname, hash, user) để pivot;
-  - `enrichments[]`: ngữ cảnh lấy từ nguồn ngoài;
-  - `unmapped`: field của nguồn không có chỗ trong schema;
-  - `raw_data`: log gốc nguyên văn.
+
+### Dictionary và attribute
+- **Là gì**: dictionary là danh sách *mọi* attribute của schema. Mỗi attribute có tên, kiểu, mô tả; class và object chỉ *tham chiếu* attribute từ dictionary, không tự định nghĩa lại.
+- **Dùng để**: bảo đảm một tên chỉ có một nghĩa ở khắp nơi. `hostname` trong `device`, trong `src_endpoint` hay trong `dst_endpoint` đều là cùng một khái niệm, cùng kiểu.
+
+### Kiểu dữ liệu (data type)
+- **Là gì**: kiểu cơ bản (`string_t`, `integer_t`, `long_t`, `float_t`, `boolean_t`, `json_t`) và kiểu có ngữ nghĩa dựa trên kiểu cơ bản: `timestamp_t` (epoch milliseconds UTC), `ip_t`, `mac_t`, `hostname_t`, `port_t`, `url_t`, `email_t`, `file_hash_t`, `file_path_t`, `username_t`, `uuid_t`...
+- **Dùng để**:
+  - kiểm tra giá trị hợp lệ (một IP phải là IP);
+  - so sánh và tính toán đúng (thời gian từ mọi nguồn cùng đơn vị, cùng múi giờ);
+  - nhận diện thực thể: nhiều kiểu được gắn sẵn loại *observable* (hostname, IP, MAC, hash...), nhờ đó có thể tự động gom các thực thể đáng chú ý của event.
+
+### Object
+- **Là gì**: một nhóm attribute có cấu trúc, dùng lại được, lồng vào nhau như JSON. Ví dụ `device`, `user`, `process`, `file`, `network_endpoint`, `metadata`. Object có thể *kế thừa* object khác: `device` và `network_endpoint` cùng mở rộng từ `endpoint`, nên cùng có `hostname`, `ip`, `mac`, `os`, `owner`.
+- **Dùng để**: mô tả một *thực thể* (máy, người, tiến trình, tệp) theo một cách duy nhất ở mọi class. Phân tích lấy thực thể làm trung tâm (gom mọi event của một máy, một user) dựa trên điều này.
+
+### Category, class, activity và `type_uid`
+- **Category**: nhóm lớn theo lĩnh vực: System Activity (1), Findings (2), Identity & Access Management (3), Network Activity (4), Discovery (5), Application Activity (6), Remediation (7)...
+- **Class**: một loại bản ghi với tập attribute riêng. `class_uid = category_uid × 1000 + n`, vd Process Activity `1007`, Detection Finding `2004`, Authentication `3002`, Network Activity `4001`, Device Inventory Info `5001`.
+- **Activity**: hành động cụ thể trong class (`activity_id`). Process Activity có Launch, Terminate, Open, Inject; Authentication có Logon, Logoff, Authentication Ticket...
+- **`type_uid = class_uid × 100 + activity_id`**: một số duy nhất trên toàn schema cho cặp "loại + hành động", vd Process Launch `100701`, Logon `300201`.
+- **Dùng để**:
+  - biết class là biết bản ghi *có những field nào* và *nghĩa của chúng*;
+  - lọc và đếm theo loại sự việc mà không phụ thuộc nguồn;
+  - `type_uid` làm khóa cho mọi thứ gắn với "một loại sự việc": khuôn mô tả, thống kê tần suất, ánh xạ sang detection.
+- **Ba kiểu class** theo bản chất dữ liệu:
+  - *activity*: một việc đã xảy ra (System, IAM, Network, Application);
+  - *finding*: một kết luận về việc đã xảy ra: alert, lỗ hổng, vi phạm tuân thủ (category Findings);
+  - *discovery/inventory*: trạng thái của một thứ tại một thời điểm: máy, phần mềm, user (category Discovery).
+
+  Ba kiểu cùng một schema nên log, alert và dữ liệu tài sản nối được với nhau trực tiếp.
+
+### Kế thừa giữa các tầng
+- **Là gì**: mọi class kế thừa *base event* (các field chung như `time`, `severity_id`, `metadata`); class trong một category kế thừa thêm field chung của category đó (vd mọi class Network có `src_endpoint`, `dst_endpoint`, `connection_info`). Class chỉ khai báo phần riêng của mình.
+- **Dùng để**: các field chung luôn có mặt và cùng nghĩa ở mọi class, nên một truy vấn trên `time` hay `src_endpoint.ip` chạy được trên mọi event mạng.
+
+### Requirement và constraint
+- **Là gì**: mỗi attribute trong class có mức *required* (bắt buộc), *recommended* (nên có), *optional*. *Constraint* ràng buộc theo nhóm, vd Authentication cần ít nhất một trong `service` hoặc `dst_endpoint`; một endpoint cần ít nhất một trong `ip`, `hostname`, `uid`, `name`...
+- **Dùng để**: định nghĩa mức tối thiểu để một bản ghi có nghĩa, và đo được chất lượng dữ liệu (bản ghi thiếu field bắt buộc là bản ghi lỗi).
+
+### Enum: cặp `_id` và caption
+- **Là gì**: attribute liệt kê đi theo cặp: `severity_id` (số) và `severity` (chữ), `status_id`/`status`, `activity_id`/`activity_name`. Quy ước chung: `0` là Unknown, `99` là Other (khi đó caption giữ chuỗi gốc của nguồn).
+- **Dùng để**: số ổn định cho máy lọc và so sánh; chữ cho người đọc; `99` giữ được giá trị nguồn không khớp danh sách mà không làm sai nghĩa.
+
+### Profile
+- **Là gì**: một nhóm attribute được "gắn thêm" vào class khi ngữ cảnh phù hợp, không cần tạo class mới. Ví dụ:
+  - `host`: thêm `device` và `actor`, cho event xảy ra trên một máy;
+  - `security_control`: thêm hành động và kết luận của control (`action_id`, `disposition_id`, `is_alert`...);
+  - `cloud`, `container`: thêm thông tin tài khoản cloud, container;
+  - `osint`, `datetime`: thêm chỉ báo tình báo, thời gian dạng chuỗi dễ đọc.
+
+  Profile đã dùng được ghi trong `metadata.profiles`.
+- **Dùng để**: một khía cạnh chung (máy, cloud, control) được mô tả giống nhau ở mọi class có khía cạnh đó, thay vì mỗi class tự định nghĩa.
+
+### Extension
+- **Là gì**: phần mở rộng có `uid` và tên riêng, thêm category, class, object, attribute hay profile mới. Schema chính thức đi kèm extension `linux`, `macos`, `windows` cho dữ liệu đặc thù hệ điều hành.
+- **Dùng để**: vendor hay tổ chức bổ sung thứ schema lõi chưa có mà không phá tương thích; schema lõi giữ gọn.
+
+### Phiên bản
+- **Là gì**: schema đánh số theo SemVer; mỗi bản ghi ghi phiên bản mình theo trong `metadata.version`. Field cũ được đánh dấu *deprecated* trước khi bỏ.
+- **Dùng để**: bên đọc biết phải hiểu bản ghi theo định nghĩa nào; schema tiến hóa mà dữ liệu cũ vẫn đọc được.
 
 ## Cách hoạt động
-Mỗi event trả lời cùng một bộ câu hỏi, và mỗi câu có chỗ cố định trong schema:
+Một class hoàn chỉnh được lắp từ các tầng:
 
-| Câu hỏi | Nơi trả lời |
-|---|---|
-| Loại gì? | `class_uid`, `activity_id` → `type_uid` |
-| Khi nào? | `time` (epoch milliseconds, UTC) |
-| Kết quả? | `status_id`; với control: `action_id`, `disposition_id`; `severity_id` |
-| Ai? | `actor` (với IAM thêm `user` là tài khoản bị tác động) |
-| Ở đâu? | `device` (observer), `src_endpoint` → `dst_endpoint` |
-| Vào cái gì? | object riêng của class: `process`, `file`, `dns_query`, `finding_info`... |
-| Bối cảnh? | `enrichments`, thuộc tính tổ chức trong `device` |
-| Tin được không? | `metadata`, `raw_data` |
-
-Đọc lần lượt các câu trên cho ra một câu mô tả hoàn chỉnh về event. Các event nối với nhau thành câu chuyện qua khóa chung: cùng process (`process.uid`), cùng phiên (`session.uid`), cùng máy (`device.uid`), hoặc liên kết do finding chỉ ra (`finding_info.related_events`).
+```
+Base event          time, severity_id, status_id, metadata, observables, enrichments, unmapped, raw_data
+ + Category         (vd IAM)  actor, src_endpoint
+ + Class            (vd Authentication 3002)  user, dst_endpoint, logon_type_id, auth_protocol_id, is_mfa...
+ + Profile          host → device · security_control → action_id, disposition_id · cloud → cloud
+ + Extension        (nếu có) field riêng của vendor/tổ chức
+ ───────────────────────────────────────────────────────────
+ = Bản ghi Authentication: mọi attribute đều tham chiếu từ dictionary, có kiểu, có mức bắt buộc
+```
 
 ## Ví dụ
-Một alert EDR đã chuẩn hóa, các field chính:
-
-```
-type_uid=200401 (Detection Finding: Create)  time=2025-10-28 08:00 UTC
-severity_id=4 (High)  disposition_id=2 (Blocked)  status_id=1 (New)
-actor.process.name=winword.exe  actor.user.name=lan.nguyen
-device.hostname=WS-0412  device.type_id=3 (Laptop)
-finding_info.title="Encoded PowerShell spawned by Office"  attacks=T1059.001
-```
-
-Đọc theo bảng: *"08:00, winword.exe của user lan.nguyen trên laptop WS-0412 sinh PowerShell mã hóa (T1059.001), EDR đã chặn; alert mức High, chưa xử lý."* Người đọc không cần biết đó là EDR của hãng nào.
+Vì `user`, `device`, `src_endpoint` là object dùng chung, cùng câu hỏi "user `lan.nguyen` đã làm gì trên máy `WS-0412`?" áp được cho Authentication (`3002`), Process Activity (`1007`), File System Activity (`1001`), Detection Finding (`2004`). Bốn class khác nhau, nhưng máy luôn ở `device.hostname` và người luôn ở `actor.user.name` hoặc `user.name`. Chỉ cần `class_uid` để biết phần còn lại của bản ghi nói về process, tệp hay alert.
 
 ## Hiểu nhầm thường gặp
 - **"OCSF là một định dạng file"**: OCSF là mô hình dữ liệu; có thể biểu diễn bằng JSON, Parquet hay bảng.
-- **"`device` và `src_endpoint` là một"**: `device` là nơi ghi nhận; với log firewall, firewall là `device`, máy người dùng là `src_endpoint`.
-- **"`status_id` nghĩa như nhau ở mọi class"**: ở activity là thành công/thất bại; ở finding là trạng thái xử lý.
-- **"Phải điền hết field"**: mỗi class có rất nhiều attribute; bản ghi chỉ điền phần bắt buộc và phần nguồn cung cấp.
+- **"Class nào cũng tự định nghĩa field"**: field đến từ dictionary chung và được kế thừa qua base event, category, profile; class chỉ thêm phần riêng.
+- **"Phải điền hết field"**: chỉ required là bắt buộc; mỗi class có hàng chục attribute cấp cao và hàng trăm đường dẫn lá, phần lớn chỉ có khi nguồn cung cấp.
+- **"Extension là OCSF"**: field trong extension chỉ có nghĩa với bên hiểu extension đó; dữ liệu trao đổi rộng nên dựa vào schema lõi.
 
 ## Liên quan
 - [15-security-data-normalization.md](15-security-data-normalization.md): vì sao cần schema chung.
-- [02-threats-and-attack-lifecycle.md](02-threats-and-attack-lifecycle.md): ATT&CK technique trong finding.
-- [17-asset-management.md](17-asset-management.md): tài sản xuất hiện trong event ra sao.
+- [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md): các nhóm field trong một event và cách đọc.
+- [18-asset-management.md](18-asset-management.md): class inventory và object `device` trong quản lý tài sản.
