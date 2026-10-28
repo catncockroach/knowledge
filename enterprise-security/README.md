@@ -3,7 +3,7 @@
 Kiến thức cơ sở cốt lõi về an ninh thông tin ở môi trường doanh nghiệp: từ khái niệm rủi ro, hành vi tấn công, các lớp phòng thủ, đến cách một tổ chức phát hiện và ứng phó sự cố qua SIEM, SOC, SOAR/XDR. Một số file tận dụng kết quả từ nghiên cứu [`research/2026-10-18-llm-tuning-rule-giam-false-positive`](../research/2026-10-18-llm-tuning-rule-giam-false-positive/report.md).
 
 ## Phạm vi
-- **Có:** nền tảng an ninh, mô hình tấn công, framework và quản trị, danh tính, các lớp control, quản lý lỗ hổng, log, SIEM, detection engineering, threat intel, tổ chức SOC, incident response, SOAR/XDR, thuật ngữ giữa các vendor.
+- **Có:** nền tảng an ninh, mô hình tấn công, framework và quản trị, danh tính, các lớp control, quản lý lỗ hổng, log, SIEM, detection engineering, threat intel, tổ chức SOC, incident response, SOAR/XDR, thuật ngữ giữa các vendor; chuyên đề dữ liệu: schema OCSF, map log SIEM/EDR sang OCSF, asset profile và enrichment.
 - **Không:** hướng dẫn cấu hình sâu theo sản phẩm, pentest/exploit chi tiết, mật mã học hình thức, pháp lý theo từng quốc gia, nền tảng mạng (xem [`internet/`](../internet/README.md)).
 - **Đối tượng:** người biết CNTT (dev, ops, data) mới vào mảng security.
 
@@ -15,6 +15,7 @@ Phòng ngừa      04 identity · 05 defense controls · 06 vulnerability mgmt
 Phát hiện       07 logging → 08 SIEM → 09 detection engineering ← 10 threat intel
 Vận hành        11 SOC → 12 incident response → 13 SOAR/XDR
 Tham chiếu      14 vendor terminology map
+Dữ liệu         15 OCSF schema → 16 mapping logs → 17 asset profile → 18 asset enrichment
 ```
 
 Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
@@ -38,6 +39,10 @@ Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
 | [12-incident-response.md](12-incident-response.md) | Event/alert/incident, vòng đời IR theo NIST 800-61, playbook vs runbook, forensics. |
 | [13-soar-xdr-and-automation.md](13-soar-xdr-and-automation.md) | SOAR, playbook, automation rule, EDR/NDR/XDR, sơ đồ luồng dữ liệu tổng thể. |
 | [14-vendor-terminology-map.md](14-vendor-terminology-map.md) | Bảng dịch thuật ngữ giữa Splunk, Sentinel, Elastic, Google SecOps, QRadar. |
+| [15-ocsf-schema.md](15-ocsf-schema.md) | Cấu trúc OCSF: category/class/activity, `type_uid`, object `device`/endpoint, profile, extension, `observables`, `enrichments`, `unmapped`. |
+| [16-mapping-logs-to-ocsf.md](16-mapping-logs-to-ocsf.md) | Map log SIEM/EDR sang OCSF: chọn class theo mã event, phân biệt `device` với `src_endpoint`, chuẩn hóa enum và thời gian; ví dụ Windows 4625. |
+| [17-asset-inventory-and-profile.md](17-asset-inventory-and-profile.md) | Dựng asset profile từ CMDB, AD, EDR, MDM, cloud, DHCP: nguồn chuẩn, entity resolution, lịch sử IP ↔ máy, criticality. |
+| [18-asset-enrichment-in-ocsf.md](18-asset-enrichment-in-ocsf.md) | Gắn asset profile vào event OCSF: khóa tra cứu, ghi vào `device`/`enrichments`/`resources`, enrich lúc ingest/truy vấn/alert, không ghi đè dữ liệu nguồn. |
 
 ## Thuật ngữ nền
 - **SIEM**: hệ thống tập trung log và chạy rule để sinh alert.
@@ -45,4 +50,6 @@ Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
 - **EDR / NDR / XDR**: phát hiện và phản ứng ở endpoint / mạng / nhiều lớp hợp nhất.
 - **SOAR**: tự động hóa quy trình xử lý alert.
 - **IoC / IoA / TTP**: dấu vết tĩnh / chuỗi hành vi / cách thức tấn công.
+- **OCSF**: schema mở, trung lập vendor để chuẩn hóa sự kiện bảo mật.
+- **Asset profile / enrichment**: hồ sơ hợp nhất của một tài sản / việc gắn hồ sơ đó vào event.
 - **TP / BTP / FP / FN**: true positive / benign true positive / false positive / false negative.
