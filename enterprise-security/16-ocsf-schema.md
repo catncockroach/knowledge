@@ -3,7 +3,7 @@
 > OCSF (Open Cybersecurity Schema Framework) là schema mở, trung lập vendor để mô tả mọi sự kiện bảo mật bằng cùng một bộ class, object và field, nhờ đó log từ SIEM, EDR, firewall hay cloud được đọc theo một cách duy nhất.
 
 ## Tại sao cần biết
-Mỗi nguồn log tự đặt tên field: EDR gọi máy là `ComputerName`, firewall gọi là `src`, Windows gọi là `WorkstationName`. Nếu không chuẩn hóa, mỗi rule và mỗi bước enrich phải viết lại cho từng nguồn. OCSF là một trong các schema chuẩn hóa đã nêu ở [07-logging-and-telemetry.md](07-logging-and-telemetry.md); file này đi sâu vào cấu trúc của nó vì hai file sau ([16](16-mapping-logs-to-ocsf.md), [18](18-asset-enrichment-in-ocsf.md)) map log và gắn asset profile vào đúng những chỗ được mô tả ở đây.
+[15-why-ocsf.md](15-why-ocsf.md) giải thích vì sao cần một schema chung và vì sao chọn OCSF. File này mô tả cấu trúc của nó: các file sau đọc event ([17](17-reading-an-ocsf-event.md)), map log ([18](18-mapping-logs-to-ocsf.md)), dựng asset profile ([20](20-asset-profiling-from-ocsf-logs.md)) và enrich ([21](21-asset-enrichment-in-ocsf.md)) đều dựa vào đúng những chỗ được mô tả ở đây.
 
 ## Khái niệm cốt lõi
 
@@ -88,7 +88,8 @@ Một sự kiện EDR "máy `WS-0412` chạy `powershell.exe`" sau khi chuẩn h
 - **"Field không có trong OCSF thì bỏ"**: đưa vào `unmapped` hoặc tạo extension; bỏ đi là mất bằng chứng.
 
 ## Liên quan
-- [07-logging-and-telemetry.md](07-logging-and-telemetry.md): vị trí của chuẩn hóa trong đường đi của log.
-- [16-mapping-logs-to-ocsf.md](16-mapping-logs-to-ocsf.md): cách map log SIEM/EDR vào các class trên.
-- [18-asset-enrichment-in-ocsf.md](18-asset-enrichment-in-ocsf.md): đặt asset profile vào `device`, `enrichments`.
-- [14-vendor-terminology-map.md](14-vendor-terminology-map.md): OCSF so với ECS, UDM, ASIM, CIM.
+- [15-why-ocsf.md](15-why-ocsf.md): vì sao cần schema chung và vì sao chọn OCSF.
+- [17-reading-an-ocsf-event.md](17-reading-an-ocsf-event.md): quy trình đọc hiểu một event theo cấu trúc trên.
+- [18-mapping-logs-to-ocsf.md](18-mapping-logs-to-ocsf.md): cách map log SIEM/EDR vào các class trên.
+- [21-asset-enrichment-in-ocsf.md](21-asset-enrichment-in-ocsf.md): đặt asset profile vào `device`, `enrichments`.
+- [14-vendor-terminology-map.md](14-vendor-terminology-map.md): schema của từng vendor (CIM, ASIM, ECS, UDM).

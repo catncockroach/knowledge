@@ -3,13 +3,13 @@
 > Asset enrichment là bước gắn asset profile vào event OCSF đã map: tìm đúng tài sản cho từng máy xuất hiện trong event, rồi ghi ngữ cảnh vào các attribute có sẵn của `device`/endpoint, vào `enrichments[]`, hoặc vào `resources[]` của finding.
 
 ## Tại sao cần biết
-Event sau khi map ([16-mapping-logs-to-ocsf.md](16-mapping-logs-to-ocsf.md)) mới chỉ có những gì nguồn log biết: hostname, IP, có khi chỉ một agent ID. Rule và analyst cần thêm owner, bộ phận, criticality, trạng thái EDR để:
+Event sau khi map ([18-mapping-logs-to-ocsf.md](18-mapping-logs-to-ocsf.md)) mới chỉ có những gì nguồn log biết: hostname, IP, có khi chỉ một agent ID. Rule và analyst cần thêm owner, bộ phận, criticality, trạng thái EDR để:
 - **ưu tiên**: cùng một alert, trên domain controller khác với trên máy lab;
 - **giảm false positive**: máy quét lỗ hổng, máy jump host có hành vi "đáng ngờ" nhưng hợp lệ;
 - **định tuyến**: gửi case cho đúng owner hay đơn vị;
 - **thấy lỗ hổng giám sát**: event từ máy không có trong inventory hay không có EDR.
 
-Nguồn ngữ cảnh là asset profile ở [17-asset-inventory-and-profile.md](17-asset-inventory-and-profile.md); file này nói cách gắn nó vào schema ở [15-ocsf-schema.md](15-ocsf-schema.md).
+Nguồn ngữ cảnh là asset profile ([19-asset-management-and-profile.md](19-asset-management-and-profile.md)), một phần được dựng từ chính log OCSF ([20-asset-profiling-from-ocsf-logs.md](20-asset-profiling-from-ocsf-logs.md)). File này nói cách gắn profile ngược vào event theo schema ở [16-ocsf-schema.md](16-ocsf-schema.md); các ứng dụng đầy đủ nằm ở [22-asset-data-use-cases.md](22-asset-data-use-cases.md).
 
 ## Khái niệm cốt lõi
 
@@ -92,7 +92,7 @@ flowchart LR
 Các chỉ số nên theo dõi: tỷ lệ event có máy nội bộ được enrich thành công (hit rate) theo từng nguồn log, tỷ lệ khớp bằng khóa yếu (IP) so với khóa mạnh, và số máy "unknown" mới mỗi ngày.
 
 ## Ví dụ
-Event `4625` ở file 16 (DC01 ghi nhận đăng nhập thất bại từ WS-0412) sau khi enrich, rút gọn:
+Event `4625` ở [18-mapping-logs-to-ocsf.md](18-mapping-logs-to-ocsf.md) (DC01 ghi nhận đăng nhập thất bại từ WS-0412) sau khi enrich, rút gọn:
 
 ```json
 {
@@ -135,9 +135,11 @@ Event `4625` ở file 16 (DC01 ghi nhận đăng nhập thất bại từ WS-041
 - **"Tra theo IP là đủ"**: IP không kèm thời gian và tenant sẽ gán nhầm máy khi DHCP cấp lại, qua NAT/VPN, hoặc khi hai khách hàng dùng chung dải private.
 
 ## Liên quan
-- [15-ocsf-schema.md](15-ocsf-schema.md): object `device`, `enrichments`, `metadata`.
-- [16-mapping-logs-to-ocsf.md](16-mapping-logs-to-ocsf.md): xác định đúng `device` và `src_endpoint` trước khi enrich.
-- [17-asset-inventory-and-profile.md](17-asset-inventory-and-profile.md): nguồn dữ liệu và cách dựng profile.
+- [16-ocsf-schema.md](16-ocsf-schema.md): object `device`, `enrichments`, `metadata`.
+- [18-mapping-logs-to-ocsf.md](18-mapping-logs-to-ocsf.md): xác định đúng `device` và `src_endpoint` trước khi enrich.
+- [19-asset-management-and-profile.md](19-asset-management-and-profile.md): asset profile là gì, nguồn dữ liệu.
+- [20-asset-profiling-from-ocsf-logs.md](20-asset-profiling-from-ocsf-logs.md): dựng profile từ log OCSF.
+- [22-asset-data-use-cases.md](22-asset-data-use-cases.md): dùng event đã enrich vào việc gì.
 - [08-siem.md](08-siem.md): risk-based alerting dùng criticality.
 - [11-soc-organization.md](11-soc-organization.md): multi-tenant và định tuyến case.
 - [13-soar-xdr-and-automation.md](13-soar-xdr-and-automation.md): enrich lúc có alert bằng playbook.

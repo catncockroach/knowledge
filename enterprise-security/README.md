@@ -3,7 +3,7 @@
 Kiến thức cơ sở cốt lõi về an ninh thông tin ở môi trường doanh nghiệp: từ khái niệm rủi ro, hành vi tấn công, các lớp phòng thủ, đến cách một tổ chức phát hiện và ứng phó sự cố qua SIEM, SOC, SOAR/XDR. Một số file tận dụng kết quả từ nghiên cứu [`research/2026-10-18-llm-tuning-rule-giam-false-positive`](../research/2026-10-18-llm-tuning-rule-giam-false-positive/report.md).
 
 ## Phạm vi
-- **Có:** nền tảng an ninh, mô hình tấn công, framework và quản trị, danh tính, các lớp control, quản lý lỗ hổng, log, SIEM, detection engineering, threat intel, tổ chức SOC, incident response, SOAR/XDR, thuật ngữ giữa các vendor; chuyên đề dữ liệu: schema OCSF, map log SIEM/EDR sang OCSF, asset profile và enrichment.
+- **Có:** nền tảng an ninh, mô hình tấn công, framework và quản trị, danh tính, các lớp control, quản lý lỗ hổng, log, SIEM, detection engineering, threat intel, tổ chức SOC, incident response, SOAR/XDR, thuật ngữ giữa các vendor; chuyên đề dữ liệu: vì sao OCSF, cấu trúc và cách đọc event OCSF, map log SIEM/EDR sang OCSF, asset management và asset profile dựng từ log, enrichment, ứng dụng của dữ liệu đã chuẩn hóa.
 - **Không:** hướng dẫn cấu hình sâu theo sản phẩm, pentest/exploit chi tiết, mật mã học hình thức, pháp lý theo từng quốc gia, nền tảng mạng (xem [`internet/`](../internet/README.md)).
 - **Đối tượng:** người biết CNTT (dev, ops, data) mới vào mảng security.
 
@@ -15,7 +15,8 @@ Phòng ngừa      04 identity · 05 defense controls · 06 vulnerability mgmt
 Phát hiện       07 logging → 08 SIEM → 09 detection engineering ← 10 threat intel
 Vận hành        11 SOC → 12 incident response → 13 SOAR/XDR
 Tham chiếu      14 vendor terminology map
-Dữ liệu         15 OCSF schema → 16 mapping logs → 17 asset profile → 18 asset enrichment
+Dữ liệu         15 why OCSF → 16 schema → 17 đọc event → 18 mapping
+Tài sản         19 asset profile → 20 profiling từ log → 21 enrichment → 22 ứng dụng
 ```
 
 Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
@@ -39,10 +40,14 @@ Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
 | [12-incident-response.md](12-incident-response.md) | Event/alert/incident, vòng đời IR theo NIST 800-61, playbook vs runbook, forensics. |
 | [13-soar-xdr-and-automation.md](13-soar-xdr-and-automation.md) | SOAR, playbook, automation rule, EDR/NDR/XDR, sơ đồ luồng dữ liệu tổng thể. |
 | [14-vendor-terminology-map.md](14-vendor-terminology-map.md) | Bảng dịch thuật ngữ giữa Splunk, Sentinel, Elastic, Google SecOps, QRadar. |
-| [15-ocsf-schema.md](15-ocsf-schema.md) | Cấu trúc OCSF: category/class/activity, `type_uid`, object `device`/endpoint, profile, extension, `observables`, `enrichments`, `unmapped`. |
-| [16-mapping-logs-to-ocsf.md](16-mapping-logs-to-ocsf.md) | Map log SIEM/EDR sang OCSF: chọn class theo mã event, phân biệt `device` với `src_endpoint`, chuẩn hóa enum và thời gian; ví dụ Windows 4625. |
-| [17-asset-inventory-and-profile.md](17-asset-inventory-and-profile.md) | Dựng asset profile từ CMDB, AD, EDR, MDM, cloud, DHCP: nguồn chuẩn, entity resolution, lịch sử IP ↔ máy, criticality. |
-| [18-asset-enrichment-in-ocsf.md](18-asset-enrichment-in-ocsf.md) | Gắn asset profile vào event OCSF: khóa tra cứu, ghi vào `device`/`enrichments`/`resources`, enrich lúc ingest/truy vấn/alert, không ghi đè dữ liệu nguồn. |
+| [15-why-ocsf.md](15-why-ocsf.md) | Vì sao phải chuẩn hóa log (bài toán N × M) và vì sao chọn OCSF; lợi ích khi mọi nguồn đã về OCSF và cái giá phải trả. |
+| [16-ocsf-schema.md](16-ocsf-schema.md) | Cấu trúc OCSF: category/class/activity, `type_uid`, object `device`/endpoint, profile, extension, `observables`, `enrichments`, `unmapped`. |
+| [17-reading-an-ocsf-event.md](17-reading-an-ocsf-event.md) | Quy trình 8 câu hỏi để đọc hiểu mọi event OCSF, ghép câu mô tả, nối event thành chuỗi; ví dụ đọc một alert EDR. |
+| [18-mapping-logs-to-ocsf.md](18-mapping-logs-to-ocsf.md) | Map log SIEM/EDR sang OCSF: chọn class theo mã event, phân biệt `device` với `src_endpoint`, chuẩn hóa enum và thời gian; ví dụ Windows 4625. |
+| [19-asset-management-and-profile.md](19-asset-management-and-profile.md) | Asset, asset management (vòng discover → retire), inventory khác profile, ba lớp profile (khai báo, quan sát, hành vi), entity resolution, criticality. |
+| [20-asset-profiling-from-ocsf-logs.md](20-asset-profiling-from-ocsf-logs.md) | Dựng asset profile từ chính log OCSF: sighting, class nào cho thuộc tính nào, gom theo thời gian, so với CMDB để tìm máy lạ, máy thiếu EDR. |
+| [21-asset-enrichment-in-ocsf.md](21-asset-enrichment-in-ocsf.md) | Gắn asset profile ngược vào event: khóa tra cứu, ghi vào `device`/`enrichments`/`resources`, enrich lúc ingest/truy vấn/alert. |
+| [22-asset-data-use-cases.md](22-asset-data-use-cases.md) | Ứng dụng của log OCSF sạch cộng asset profile cho phòng ngừa, phát hiện, ứng phó, đo lường; ví dụ xử lý một lỗ hổng mới từ đầu đến cuối. |
 
 ## Thuật ngữ nền
 - **SIEM**: hệ thống tập trung log và chạy rule để sinh alert.

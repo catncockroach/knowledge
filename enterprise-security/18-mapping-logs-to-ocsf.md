@@ -3,7 +3,7 @@
 > Map log là biến một bản ghi thô của SIEM, EDR hay firewall thành một event OCSF: chọn đúng class và activity, đưa từng field về đúng attribute, chuẩn hóa giá trị liệt kê và thời gian, giữ lại phần không map được.
 
 ## Tại sao cần biết
-Rule, dashboard và bước enrich asset chỉ đúng khi mapping đúng. Hai lỗi mapping hay gặp là đặt nhầm máy vào `device` thay vì `src_endpoint` và để nguyên giá trị chuỗi của nguồn thay vì chuyển sang `_id`. Khi đó tra asset profile sai máy, còn rule lọc theo `status_id` bỏ sót event. File này nối [15-ocsf-schema.md](15-ocsf-schema.md) (cấu trúc đích) với [18-asset-enrichment-in-ocsf.md](18-asset-enrichment-in-ocsf.md) (làm giàu sau khi map).
+Rule, dashboard và bước enrich asset chỉ đúng khi mapping đúng. Hai lỗi mapping hay gặp là đặt nhầm máy vào `device` thay vì `src_endpoint` và để nguyên giá trị chuỗi của nguồn thay vì chuyển sang `_id`. Khi đó tra asset profile sai máy, còn rule lọc theo `status_id` bỏ sót event. File này nối [16-ocsf-schema.md](16-ocsf-schema.md) (cấu trúc đích) với [21-asset-enrichment-in-ocsf.md](21-asset-enrichment-in-ocsf.md) (làm giàu sau khi map).
 
 ## Khái niệm cốt lõi
 - **Parse** và **map** là hai bước khác nhau:
@@ -71,7 +71,8 @@ Kết quả: `type_uid = 300201`. Ở bước enrich, cả `device` (DC01) và `
 - **"Map xong là xong"**: schema nguồn đổi theo phiên bản agent; cần giám sát tỷ lệ field rơi vào `unmapped` và tỷ lệ event `class_uid` không xác định để phát hiện parser hỏng.
 
 ## Liên quan
-- [15-ocsf-schema.md](15-ocsf-schema.md): class, object, profile mà mapping nhắm tới.
-- [17-asset-inventory-and-profile.md](17-asset-inventory-and-profile.md): dữ liệu asset sẽ được gắn vào event sau khi map.
-- [18-asset-enrichment-in-ocsf.md](18-asset-enrichment-in-ocsf.md): bước enrich trong pipeline trên.
+- [16-ocsf-schema.md](16-ocsf-schema.md): class, object, profile mà mapping nhắm tới.
+- [17-reading-an-ocsf-event.md](17-reading-an-ocsf-event.md): đọc event sau khi map.
+- [20-asset-profiling-from-ocsf-logs.md](20-asset-profiling-from-ocsf-logs.md): `device` và `src_endpoint` map đúng thì mới dựng được asset profile đúng.
+- [21-asset-enrichment-in-ocsf.md](21-asset-enrichment-in-ocsf.md): bước enrich trong pipeline trên.
 - [08-siem.md](08-siem.md): rule chạy trên event đã chuẩn hóa.
