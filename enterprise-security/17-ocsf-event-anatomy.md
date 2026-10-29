@@ -127,6 +127,23 @@ Một alert EDR đã chuẩn hóa (rút gọn):
 
 Ghép lại: *"08:00, winword.exe (lan.nguyen) trên laptop WS-0412 của phòng Tài chính (criticality High) sinh PowerShell mã hóa (T1059.001); EDR đã chặn. Alert High, chưa xử lý."*
 
+## Câu hỏi và trả lời
+
+**Một event OCSF trả lời các thông tin "ai, làm gì, khi nào, ở đâu, kết quả ra sao" như thế nào?**
+Mỗi câu hỏi có một nhóm field cố định, và nhóm đó có mặt trong mọi class vì đến từ base event, category hoặc profile. Câu hỏi về *đối tượng* thì nằm trong object riêng của class. Bảng ở *Cách hoạt động* là bản đồ đầy đủ: loại ở `type_uid`, thời điểm ở `time`, kết quả ở `status_id`/`disposition_id`, chủ thể ở `actor`, nơi xảy ra ở `device` và `src_endpoint`/`dst_endpoint`. Một field trống nghĩa là nguồn không cung cấp hoặc mapping không điền, tức là "không biết", không phải "không xảy ra".
+
+**Một event có thể nói về bao nhiêu máy, bao nhiêu người?**
+Mỗi *vai* là một object đơn (`device`, `src_endpoint`, `dst_endpoint`, `actor`, `user`), nên một event có thể nhắc nhiều máy, nhiều người, nhưng mỗi vai chỉ một. Khi cần liệt kê nhiều thực thể cùng vai, schema dùng mảng: `resources[]` và `evidences[]` của finding. `observables[]` liệt kê mọi thực thể đáng chú ý, bất kể vai.
+
+**Alert là class gì: activity hay finding?**
+Phân biệt theo cách alert sinh ra. Một control (firewall, antivirus, IPS) phán quyết ngay trên một sự việc thì vẫn là class hoạt động của sự việc đó, cộng profile `security_control` với `disposition_id` và `is_alert`. Một hệ thống phân tích một hay nhiều event rồi đưa ra kết luận (SIEM, UEBA, phần phân tích của EDR) thì sinh class Finding, vd Detection Finding. Finding có vòng đời riêng (Create, Update, Close) và trỏ về các event làm bằng chứng.
+
+**`time` khác `original_time`, `processed_time`, `logged_time` thế nào?**
+`time` là thời điểm *sự việc* xảy ra, đã chuẩn hóa; mọi phân tích theo thời gian dùng nó. Các mốc trong `metadata` mô tả *hành trình của bản ghi*: `original_time` là chuỗi thời gian gốc chưa chuẩn hóa; `processed_time` là lúc qua hệ thống xử lý trung gian; `logged_time` là lúc tới nơi lưu cuối. Chênh lệch giữa chúng đo độ trễ của pipeline, không nói gì về sự việc.
+
+**Làm sao biết hai event có liên quan nhau?**
+Hai event liên quan khi chúng chia sẻ một khóa thực thể hoặc khóa nhóm: cùng tiến trình (`process.uid`), cùng phiên (`actor.session.uid`), cùng máy (`device.uid`), cùng thực thể trong `observables`, cùng `metadata.correlation_uid`. Liên kết tường minh nhất là `finding_info.related_events` của finding. Cùng hostname hay IP chỉ là liên quan *có thể*, vì định danh yếu có thể đổi chủ theo thời gian.
+
 ## Hiểu nhầm thường gặp
 - **"`device` luôn là máy người dùng"**: `device` là nơi ghi nhận; với log firewall hay domain controller, máy người dùng nằm ở `src_endpoint`.
 - **"`severity_id` cao là sự cố nghiêm trọng"**: đó là đánh giá của nguồn; ưu tiên thực còn phụ thuộc tài sản ([20-asset-context-in-security-operations.md](20-asset-context-in-security-operations.md)).

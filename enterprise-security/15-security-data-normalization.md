@@ -40,6 +40,23 @@ Sau chuẩn hóa, người dùng dữ liệu không cần biết log đến từ
 ## Ví dụ
 Windows ghi event `4625` (đăng nhập thất bại) trên domain controller `DC01`, người dùng gõ sai mật khẩu từ laptop `WS-0412`. Log gốc có `Computer=DC01` và `WorkstationName=WS-0412`, hai field tên na ná nhau nhưng là hai vai khác hẳn: DC01 là *observer* và *destination*, WS-0412 là *source*. Nếu chuẩn hóa nhầm WS-0412 thành máy ghi log, mọi phân tích phía sau sẽ gán sự việc cho sai máy.
 
+## Câu hỏi và trả lời
+
+**Chuẩn hóa có làm mất dữ liệu gốc không?**
+Chuẩn hóa thêm một cách biểu diễn chung; nó không buộc phải bỏ bản gốc. Trong OCSF, thứ không có chỗ trong schema được giữ ở `unmapped`, còn log nguyên văn có thể giữ ở `raw_data`. Mất dữ liệu chỉ xảy ra khi người vận hành chủ động bỏ hai phần này để tiết kiệm. Đó là đánh đổi chi phí, không phải bản chất của chuẩn hóa.
+
+**Một dòng log nguồn trở thành bao nhiêu bản ghi chuẩn hóa?**
+Đơn vị của chuẩn hóa là *sự việc*, không phải dòng log. Một sự việc thành một bản ghi thuộc đúng một loại. Một dòng log nguồn mô tả một sự việc (một lần đăng nhập) thành một bản ghi. Một dòng gộp nhiều sự việc độc lập (log theo lô) được tách thành nhiều bản ghi. Nhiều lần lặp của cùng một sự việc có thể gộp thành một bản ghi có số đếm và khoảng thời gian (`count`, `start_time`, `end_time` trong OCSF).
+
+**Điều gì quyết định một máy là "nguồn", "đích" hay "nơi ghi nhận"?**
+Vai do ngữ nghĩa của sự việc quyết định, không do tên field ở nguồn. Người chuẩn hóa phải hiểu nguồn đang mô tả chuyện gì: ai khởi tạo, ai nhận, ai ghi lại. Với event `4625` ở phần Ví dụ, `Computer` là nơi ghi nhận và đích; `WorkstationName` là nguồn. Cùng một máy đổi vai giữa các sự việc khác nhau.
+
+**Ai làm việc chuẩn hóa: nguồn hay hệ thống thu thập?**
+Có hai cách. *Producer* là nguồn tự sinh dữ liệu theo schema. *Mapper* là một hệ thống ở giữa dịch log nguồn sang schema. OCSF mô tả cả hai vai. Producer hiểu dữ liệu của mình nhất, nên khi thiếu chỗ thì nên mở rộng schema (extension) thay vì đẩy vào `unmapped`. Mapper xử lý nhiều vendor thì dùng `unmapped` cho phần đặc thù của từng vendor.
+
+**Vì sao không dùng luôn schema của nền tảng SIEM đang có?**
+Schema của một nền tảng được thiết kế cho nền tảng đó; dữ liệu theo schema ấy dùng tốt nhất bên trong nó. Khi cùng dữ liệu phải phục vụ nhiều công cụ hay sống lâu hơn một nền tảng, schema trung lập giảm phụ thuộc. Nếu toàn bộ dữ liệu chỉ dùng trong một nền tảng, schema của nền tảng đó là đủ.
+
 ## Hiểu nhầm thường gặp
 - **"Chuẩn hóa chỉ là đổi tên field"**: phần khó là giữ đúng *nghĩa* và *vai trò*, không phải tên.
 - **"Đúng schema là dữ liệu tốt"**: dữ liệu có thể đúng schema mà sai nghĩa.

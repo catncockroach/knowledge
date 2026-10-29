@@ -48,6 +48,20 @@ Event `4625` trên `DC01` từ `WS-0412` (xem [15](15-security-data-normalizatio
 
 Cùng một lần gõ sai mật khẩu, nhưng giờ đọc được là: đích là tài sản quan trọng nhất của domain, nguồn là một máy đã được quản lý.
 
+## Câu hỏi và trả lời
+
+**Enrichment có sửa dữ liệu nguồn không?**
+Enrichment thêm, không sửa. Dữ liệu nguồn là bằng chứng về điều nguồn đã thấy; enrichment là thông tin từ bên ngoài, có nguồn cung cấp và thời điểm riêng. Trong OCSF, `enrichments[]` ghi rõ `provider`, `created_time` và field được làm giàu. Khi ngữ cảnh được điền vào attribute của `device`, cần phân biệt được attribute nào nguồn báo và attribute nào được bổ sung.
+
+**Một event được enrich cho bao nhiêu thực thể?**
+Mỗi thực thể trong event có thể có ngữ cảnh riêng. Mỗi phần tử của `enrichments[]` trỏ tới đúng một field qua `name` và `value`, nên một event có thể mang ngữ cảnh cho `device`, `src_endpoint.ip`, `user.name`... cùng lúc mà không lẫn.
+
+**Ngữ cảnh gắn vào event là của thời điểm nào?**
+Là của thời điểm enrich, không tự động là của thời điểm sự việc. Enrich ngay khi event đến thì hai thời điểm gần như trùng nhau. Enrich lúc truy vấn thì ngữ cảnh là của hiện tại, trừ khi nguồn ngữ cảnh lưu lịch sử và được tra theo `time` của event. Điều tra một sự việc cũ cần ngữ cảnh *lúc sự việc xảy ra*.
+
+**Vì sao log có thể dùng làm nguồn inventory?**
+Mọi event có tài sản đều là một bằng chứng rằng tài sản đó tồn tại và đang hoạt động, kèm một số thuộc tính của nó. Tập hợp các lần quan sát theo thời gian cho ra lớp quan sát và lớp hành vi của profile. Giới hạn: log chỉ thấy tài sản *có hoạt động* và *được ít nhất một nguồn ghi lại*. Tài sản im lặng hoặc nằm ngoài vùng thu log vẫn cần các cách phát hiện khác.
+
 ## Hiểu nhầm thường gặp
 - **"Enrichment là việc phụ"**: thiếu ngữ cảnh tài sản thì mọi alert trông như nhau; ưu tiên và triage đều dựa vào nó.
 - **"Mọi hostname trong log là một máy"**: proxy, NAT, VPN gateway làm nhiều máy hiện như một; terminal server có hàng trăm user. Quan sát cần độ tin cậy theo vai trò và nguồn.

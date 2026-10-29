@@ -84,9 +84,28 @@ Base event          time, severity_id, status_id, metadata, observables, enrichm
 ## Ví dụ
 Vì `user`, `device`, `src_endpoint` là object dùng chung, cùng câu hỏi "user `lan.nguyen` đã làm gì trên máy `WS-0412`?" áp được cho Authentication (`3002`), Process Activity (`1007`), File System Activity (`1001`), Detection Finding (`2004`). Bốn class khác nhau, nhưng máy luôn ở `device.hostname` và người luôn ở `actor.user.name` hoặc `user.name`. Chỉ cần `class_uid` để biết phần còn lại của bản ghi nói về process, tệp hay alert.
 
+## Câu hỏi và trả lời
+
+**Một log OCSF có thể thể hiện nhiều class hay chỉ một class?**
+Mỗi event OCSF là đúng một bản ghi của một class: một `class_uid`, một `activity_id`, và vì `class_uid` mã hóa category nên cũng đúng một `category_uid`. Tài liệu OCSF nêu rõ mục tiêu thiết kế là mọi event nguồn map được vào *một* class, nhờ ghép thành phần (composition) thay vì đa kế thừa. Một lần đăng nhập là một event Authentication, activity Logon. Một sự việc có nhiều khía cạnh (truy cập file và bị antivirus chặn) vẫn là một class (File System Activity); khía cạnh còn lại được thêm bằng profile (`security_control`), không bằng class thứ hai. Kết luận rút ra từ nhiều event (một finding của SIEM) là một event *khác*, thuộc class Finding, và trỏ về các event gốc.
+
+**Category, class và activity quan hệ với nhau thế nào?**
+Đó là một cây: mỗi class thuộc đúng một category, mỗi activity thuộc đúng một class. Giá trị `activity_id` chỉ có nghĩa bên trong class của nó: `1` là Launch ở Process Activity nhưng là Logon ở Authentication. Vì vậy mới cần `type_uid = class_uid × 100 + activity_id`, một số mang đủ nghĩa mà không cần nhìn field khác.
+
+**Profile và extension khác nhau thế nào?**
+Profile là một *cách gắn* nhóm attribute vào class khi ngữ cảnh phù hợp; extension là một *nguồn định nghĩa* mới nằm ngoài schema lõi. Profile không tạo loại bản ghi mới: event vẫn thuộc class cũ, chỉ có thêm field (`host` thêm `device`, `actor`). Extension có thể thêm attribute, object, class, cả profile mới. Hai khái niệm không loại trừ nhau: vendor có thể định nghĩa một profile trong extension của mình.
+
+**Có được thêm field mà class không định nghĩa không?**
+Một event chỉ hợp lệ với các attribute mà class định nghĩa, gồm cả phần kế thừa từ base event, từ category và từ các profile đã áp. Dữ liệu nằm ngoài tập đó đi vào `unmapped`, hoặc được định nghĩa qua extension. Không có "field tự do" ở cấp cao nhất của event.
+
+**Required nghĩa là gì khi nguồn không có giá trị?**
+Required là điều kiện tối thiểu để bản ghi có nghĩa: thiếu nó thì bản ghi không hợp lệ. Với attribute liệt kê, "không biết" vẫn là một giá trị hợp lệ (`0` Unknown), nên điền `0` chứ không bỏ trống. Với `99` Other, caption giữ chuỗi gốc của nguồn để không mất nghĩa.
+
+**Vì sao một thực thể (máy, user) được mô tả giống nhau ở mọi class?**
+Vì class không tự định nghĩa field mà tham chiếu dictionary và object dùng chung. `device` trong Authentication và trong Process Activity là cùng một object, cùng attribute. Nhờ đó gom được mọi event của một máy hay một user mà không cần biết class.
+
 ## Hiểu nhầm thường gặp
 - **"OCSF là một định dạng file"**: OCSF là mô hình dữ liệu; có thể biểu diễn bằng JSON, Parquet hay bảng.
-- **"Class nào cũng tự định nghĩa field"**: field đến từ dictionary chung và được kế thừa qua base event, category, profile; class chỉ thêm phần riêng.
 - **"Phải điền hết field"**: chỉ required là bắt buộc; mỗi class có hàng chục attribute cấp cao và hàng trăm đường dẫn lá, phần lớn chỉ có khi nguồn cung cấp.
 - **"Extension là OCSF"**: field trong extension chỉ có nghĩa với bên hiểu extension đó; dữ liệu trao đổi rộng nên dựa vào schema lõi.
 

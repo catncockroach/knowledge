@@ -44,6 +44,20 @@ Hai alert cùng loại "PowerShell mã hóa", cùng severity High:
 
 Không có ngữ cảnh, hai alert xếp hàng như nhau. Có ngữ cảnh, B được xử lý ngay, phạm vi điều tra mở rộng sang các máy tài khoản đó từng đăng nhập, và việc cô lập máy được cân nhắc theo ảnh hưởng nghiệp vụ của máy chủ backup.
 
+## Câu hỏi và trả lời
+
+**Severity khác priority thế nào?**
+Severity là thuộc tính của *sự việc* theo đánh giá của nguồn; priority là *quyết định của tổ chức* về thứ tự xử lý. Priority tổ hợp severity với criticality của tài sản, độ tin cậy của phát hiện và ngữ cảnh khác. Hai alert cùng severity vì thế có thể có priority rất khác nhau, như phần Ví dụ.
+
+**Ngữ cảnh tài sản giảm false positive bằng cách nào?**
+Ngữ cảnh không làm logic rule đúng hơn. Nó giúp phân biệt hành vi *có thật nhưng hợp lệ* (benign true positive) với hành vi đáng lo. Rule bắn đúng hành vi đã mô tả, chẳng hạn công cụ quản trị chạy trên jump host. Ngữ cảnh cho biết với *vai trò của máy này*, hành vi đó là bình thường. Alert do logic rule sai (false positive thật) vẫn phải sửa ở rule ([09](09-detection-engineering.md)).
+
+**Asset management thuộc phòng ngừa, phát hiện hay ứng phó?**
+Nó là nền chung của cả ba, nên các framework đặt nó ở bước đầu (Identify trong NIST CSF). Cùng một profile cho phòng ngừa biết cần bảo vệ gì, cho phát hiện biết điều gì là bất thường, cho ứng phó biết ai chịu trách nhiệm và ảnh hưởng đến đâu.
+
+**Thiếu ngữ cảnh tài sản thì chuyện gì xảy ra?**
+Hệ thống vẫn chạy, nhưng mọi tài sản bị đối xử như nhau. Ưu tiên chỉ còn dựa vào severity của nguồn. Ngoại lệ phải viết bằng danh sách IP cứng, dễ sai khi IP đổi chủ. Việc tra owner, vai trò máy dồn sang analyst làm tay trong lúc triage.
+
 ## Hiểu nhầm thường gặp
 - **"Asset management chỉ để báo cáo"**: nó là đầu vào của mọi quyết định ưu tiên, triage và containment.
 - **"Có ngữ cảnh thì detection tự tốt lên"**: rule và quy trình phải được thiết kế để *dùng* ngữ cảnh; ngữ cảnh không ai dùng chỉ tốn dung lượng.

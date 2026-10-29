@@ -70,10 +70,27 @@ Hồ sơ của laptop `WS-0412`:
 
 Lúc 02:00, `WS-0412` mở kết nối SMB tới 40 máy. Riêng event đó không có gì sai về kỹ thuật, nhưng so với lớp hành vi thì đây là dấu hiệu lateral movement.
 
+## Câu hỏi và trả lời
+
+**Tài sản chỉ là máy tính thôi sao?**
+Tài sản là bất cứ thứ gì có giá trị cần bảo vệ: phần cứng, phần mềm, dữ liệu, danh tính, dịch vụ. Trong vận hành bảo mật, phần được quản lý bằng dữ liệu là các *thực thể quan sát được*: máy, workload, tài nguyên cloud, thiết bị mạng, phần mềm. Danh tính và dữ liệu cũng là tài sản nhưng có vòng quản lý riêng.
+
+**Một tài sản có bao nhiêu định danh, và một định danh trỏ tới bao nhiêu tài sản?**
+Một tài sản luôn có nhiều định danh. Định danh mạnh gắn với đúng một tài sản suốt vòng đời của nó. Định danh yếu là quan hệ nhiều–nhiều theo thời gian: một IP lần lượt thuộc nhiều máy, một máy lần lượt có nhiều IP. Vì vậy một định danh yếu chỉ trỏ đúng một tài sản khi kèm thời điểm.
+
+**Inventory, CMDB và asset profile khác nhau thế nào?**
+Khác nhau ở *nội dung* và *nguồn*. Inventory là danh sách "có gì". CMDB là một nguồn khai báo, chứa lớp "nên là gì". Asset profile là hồ sơ hợp nhất của từng tài sản, gồm cả ba lớp khai báo, quan sát, hành vi, có lịch sử. CMDB là một đầu vào của profile, không thay được profile.
+
+**Criticality có cố định không, và ai quyết định?**
+Criticality đi theo vai trò nghiệp vụ của tài sản, nên đổi khi vai trò đổi: máy test thành máy production, server bắt đầu giữ dữ liệu nhạy cảm. Người quyết định là chủ sở hữu nghiệp vụ; đội bảo mật đề xuất dựa trên vai trò hạ tầng (Tier 0). Vì criticality thay đổi, nó cũng cần lịch sử như các thuộc tính khác.
+
+**OCSF biểu diễn tài sản ở đâu?**
+Ở hai chỗ, theo hai kiểu bản ghi. Trong *event hoạt động và finding*, tài sản xuất hiện như object thực thể theo vai (`device`, `src_endpoint`, `dst_endpoint`, `resources[]`). Trong *class inventory* của category Discovery, tài sản là chủ thể của bản ghi: trạng thái của nó tại một thời điểm. Cả hai dùng chung object `device`, nên nối được trực tiếp.
+
 ## Hiểu nhầm thường gặp
 - **"CMDB là inventory"**: CMDB chỉ là lớp khai báo; máy không có trong CMDB thường là máy nguy hiểm nhất.
-- **"IP là định danh máy"**: IP là thuộc tính tạm thời; thiếu chiều thời gian sẽ gán sự việc cho nhầm máy.
-- **"Criticality do security tự đặt"**: criticality phản ánh giá trị nghiệp vụ, cần chủ sở hữu nghiệp vụ xác nhận.
+- **"Asset management là kiểm kê định kỳ"**: tài sản sinh ra, đổi vai trò và biến mất liên tục (VM, container sống vài giờ); kiểm kê định kỳ chỉ cho một ảnh chụp đã cũ.
+- **"Máy không cài agent thì không biết gì về nó"**: máy không có agent vẫn để lại dấu vết trong log mạng, DHCP, xác thực; phát hiện thụ động chính là để thấy những máy này.
 
 ## Liên quan
 - [06-vulnerability-management.md](06-vulnerability-management.md): inventory là tiền đề của quản lý lỗ hổng.
