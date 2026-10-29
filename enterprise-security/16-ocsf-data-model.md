@@ -173,4 +173,4 @@ Quy tắc: phân loại nằm ở các field phân loại của base event, còn
 - [15-security-data-normalization.md](15-security-data-normalization.md): vì sao cần schema chung, schema hướng class khác schema tập field dùng chung.
 - [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md): các nhóm field trong một event (gồm field của `security_control`, `finding_info`, `metadata`) và cách đọc.
 - [12-incident-response.md](12-incident-response.md): event, alert, incident; đối chiếu với finding và `is_alert`.
-- [18-asset-management.md](18-asset-management.md): class inventory và object `device` trong quản lý tài sản.
+- [18-asset-inventory-and-profile.md](18-asset-inventory-and-profile.md): class inventory và object `device` trong quản lý tài sản.
