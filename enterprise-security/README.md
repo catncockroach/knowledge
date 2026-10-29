@@ -41,7 +41,7 @@ Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
 | [13-soar-xdr-and-automation.md](13-soar-xdr-and-automation.md) | SOAR, playbook, automation rule, EDR/NDR/XDR, sơ đồ luồng dữ liệu tổng thể. |
 | [14-vendor-terminology-map.md](14-vendor-terminology-map.md) | Bảng dịch thuật ngữ giữa Splunk, Sentinel, Elastic, Google SecOps, QRadar. |
 | [15-security-data-normalization.md](15-security-data-normalization.md) | Vì sao log phải chuẩn hóa (khác tên, nghĩa, giá trị, thời gian), parse khác normalize, vai trò ngữ nghĩa, bài toán N × M, vị trí của OCSF. |
-| [16-ocsf-data-model.md](16-ocsf-data-model.md) | Các thành phần của OCSF và công dụng: dictionary, kiểu dữ liệu, object, category/class/activity, `type_uid`, kế thừa, requirement, enum, profile, extension, phiên bản. |
+| [16-ocsf-data-model.md](16-ocsf-data-model.md) | Các thành phần của OCSF và công dụng (dictionary, kiểu dữ liệu, object, category/class/activity, `type_uid`, requirement, enum, profile, extension, phiên bản); ba trục của một event: đúng 1 class, 0..n profile, 0..n extension. |
 | [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md) | Các nhóm field trong một event (phân loại, thời gian, kết quả, thực thể theo vai, finding, `observables`, `enrichments`, `metadata`, `unmapped`), mỗi nhóm dùng để làm gì và cách đọc một event. |
 | [18-asset-management.md](18-asset-management.md) | Asset, vòng đời asset management, các cách phát hiện tài sản, ba lớp asset profile, định danh tài sản, criticality khác risk, tài sản trong OCSF (`device`, class inventory). |
 | [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md) | Quan hệ hai chiều giữa log và profile: event là một lần quan sát tài sản, enrichment đưa ngữ cảnh ngược vào event. |
