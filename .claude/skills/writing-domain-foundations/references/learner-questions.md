@@ -22,7 +22,7 @@ For each file, go through these kinds and keep the questions that matter for its
 | Design reason | Vì sao thiết kế như vậy? | the trade-off the design chose |
 | Boundary | Khi nào quy tắc này không đúng? Trường hợp đặc biệt? | the exceptions and how the domain handles them |
 
-Questions the user asked in the conversation are mandatory entries, phrased the way they asked them.
+Questions the user asked in the conversation are mandatory entries. Keep their meaning and wording; only fix spelling and abbreviations ("1 log ocsf" → "Một log OCSF").
 
 ## Answer from the general rule
 
@@ -43,9 +43,11 @@ In the *Câu hỏi và trả lời* section of each topic file:
 <Quy tắc tổng quát, một câu.> <Áp vào trường hợp được hỏi.> <Ranh giới hoặc điểm hay nhầm.>
 ```
 
-Keep each answer to a short paragraph. If an answer needs a long mechanism, put the mechanism in *Cách hoạt động* and answer briefly with a link to it.
+Keep each answer to a short paragraph. A distinction along several dimensions may carry a small comparison table inside the answer. If an answer needs a long mechanism, put the mechanism in *Cách hoạt động* and answer briefly with a link to it.
 
 ## Examples
+
+These show the *shape* of a good answer. Never copy them into a file as content: derive each answer from the topic's own sources, which usually say more than the example does.
 
 **Narrow (avoid)**
 > **Một log OCSF có thể thể hiện nhiều class không?**
@@ -55,7 +57,9 @@ It answers one case, and the reader still cannot tell what happens to an alert, 
 
 **General (target)**
 > **Một log OCSF có thể thể hiện nhiều class không?**
-> Mỗi event OCSF là đúng một bản ghi của một class: một `class_uid`, một `activity_id`, và vì `class_uid` mã hóa category nên cũng đúng một `category_uid`. Một lần đăng nhập vì thế là một event Authentication với activity Logon. Một log nguồn có nhiều khía cạnh (vừa là truy cập file vừa bị antivirus chặn) vẫn là một class; khía cạnh còn lại được thêm bằng profile (`security_control`), không bằng class thứ hai. Kết luận rút ra từ nhiều event (một alert của SIEM) là một event riêng thuộc class Finding, nối về các event gốc.
+> Một event OCSF có ba trục độc lập: đúng *một* class (nên đúng một `activity_id`, một `type_uid`, một category), *0..n* profile, *0..n* extension. Một lần đăng nhập là một event Authentication. Sự việc có khía cạnh thứ hai (file bị antivirus chặn) vẫn là một class, khía cạnh kia đi vào profile `security_control`. Ranh giới: một bản ghi nguồn gói nhiều sự việc thì tách thành nhiều event; kết luận rút ra từ nhiều event là một event mới thuộc class Finding. Alert không nhất thiết là Finding: alert của control tại chỗ là event hoạt động áp `security_control` với `is_alert`.
+
+It answers the whole family (how many classes, profiles, extensions; what happens to multi-faceted logs, batches and alerts), and every claim traces to the spec.
 
 **Narrow (avoid)**
 > **IP trong log firewall nằm ở đâu?**
