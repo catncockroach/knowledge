@@ -3,7 +3,7 @@
 > Mọi bản ghi OCSF gồm cùng những nhóm field: phân loại, thời gian, kết quả, các thực thể theo vai trò, nội dung riêng của class, kết luận của control hay finding, chỉ mục thực thể (`observables`), ngữ cảnh (`enrichments`), xuất xứ (`metadata`) và phần dự phòng (`unmapped`, `raw_data`). Biết mỗi nhóm dùng để làm gì là đọc được mọi event theo một trình tự cố định.
 
 ## Tại sao cần biết
-[16-ocsf-data-model.md](16-ocsf-data-model.md) mô tả khung của schema; file này mở một bản ghi cụ thể ra xem bên trong. Mỗi nhóm field trả lời một câu hỏi mà analyst, rule hay hệ thống tự động đều phải hỏi. Các phần về tài sản ([18](18-asset-management.md), [19](19-asset-context-and-enrichment.md)) dựa trực tiếp vào nhóm *thực thể*, *enrichments* và *metadata* ở đây.
+[16-ocsf-data-model.md](16-ocsf-data-model.md) mô tả khung của schema; file này mở một bản ghi cụ thể ra xem bên trong. Mỗi nhóm field trả lời một câu hỏi mà analyst, rule hay hệ thống tự động đều phải hỏi. Các phần về tài sản ([18](18-asset-inventory-and-profile.md), [19](19-building-asset-profiles-from-events.md)) dựa trực tiếp vào nhóm *thực thể*, *enrichments* và *metadata* ở đây.
 
 ## Khái niệm cốt lõi
 
@@ -153,5 +153,5 @@ Hai event liên quan khi chúng chia sẻ một khóa thực thể hoặc khóa 
 ## Liên quan
 - [16-ocsf-data-model.md](16-ocsf-data-model.md): dictionary, object, class, profile tạo nên các nhóm field trên.
 - [15-security-data-normalization.md](15-security-data-normalization.md): vai trò ngữ nghĩa khi chuẩn hóa.
-- [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md): ngữ cảnh tài sản trong `device` và `enrichments`.
+- [19-building-asset-profiles-from-events.md](19-building-asset-profiles-from-events.md): ngữ cảnh tài sản trong `device` và `enrichments`.
 - [02-threats-and-attack-lifecycle.md](02-threats-and-attack-lifecycle.md): ATT&CK trong `finding_info.attacks`.

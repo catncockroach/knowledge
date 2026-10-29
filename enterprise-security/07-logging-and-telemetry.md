@@ -42,5 +42,5 @@ Một dòng log Windows `4625` (đăng nhập thất bại) được parse thàn
 
 ## Liên quan
 - [08-siem.md](08-siem.md): nơi tập trung và phân tích log.
-- [15-security-data-normalization.md](15-security-data-normalization.md): chuẩn hóa và OCSF chi tiết; [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md): enrichment ngữ cảnh tài sản.
+- [15-security-data-normalization.md](15-security-data-normalization.md): chuẩn hóa và OCSF chi tiết; [19-building-asset-profiles-from-events.md](19-building-asset-profiles-from-events.md): enrichment ngữ cảnh tài sản.
 - [../internet/08-dns-and-dhcp.md](../internet/08-dns-and-dhcp.md): DNS log là nguồn telemetry mạng giá trị.

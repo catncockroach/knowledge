@@ -1,6 +1,6 @@
 # Enterprise security
 
-Kiến thức cơ sở cốt lõi về an ninh thông tin ở môi trường doanh nghiệp: từ khái niệm rủi ro, hành vi tấn công, các lớp phòng thủ, đến cách một tổ chức phát hiện và ứng phó sự cố qua SIEM, SOC, SOAR/XDR. Một số file tận dụng kết quả từ nghiên cứu [`research/2026-10-18-llm-tuning-rule-giam-false-positive`](../research/2026-10-18-llm-tuning-rule-giam-false-positive/report.md).
+Kiến thức cơ sở cốt lõi về an ninh thông tin ở môi trường doanh nghiệp: từ khái niệm rủi ro, hành vi tấn công, các lớp phòng thủ, đến cách một tổ chức phát hiện và ứng phó sự cố qua SIEM, SOC, SOAR/XDR. Một số file tận dụng kết quả từ nghiên cứu [`research/2026-10-18-llm-tuning-rule-giam-false-positive`](../research/2026-10-18-llm-tuning-rule-giam-false-positive/report.md) và [`research/2026-10-29-asset-profile-tu-event-chuan-hoa`](../research/2026-10-29-asset-profile-tu-event-chuan-hoa/report.md).
 
 ## Phạm vi
 - **Có:** nền tảng an ninh, mô hình tấn công, framework và quản trị, danh tính, các lớp control, quản lý lỗ hổng, log, SIEM, detection engineering, threat intel, tổ chức SOC, incident response, SOAR/XDR, thuật ngữ giữa các vendor; chuẩn hóa dữ liệu bảo mật và OCSF, asset management, ngữ cảnh tài sản và enrichment, vai trò của ngữ cảnh tài sản trong vận hành.
@@ -16,7 +16,7 @@ Phát hiện       07 logging → 08 SIEM → 09 detection engineering ← 10 th
 Vận hành        11 SOC → 12 incident response → 13 SOAR/XDR
 Tham chiếu      14 vendor terminology map
 Dữ liệu         15 normalization → 16 OCSF data model → 17 OCSF event anatomy
-Tài sản         18 asset management → 19 context & enrichment → 20 ứng dụng trong vận hành
+Tài sản         18 inventory & profile → 19 dựng profile từ event → 20 ứng dụng trong vận hành
 ```
 
 Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
@@ -43,8 +43,8 @@ Vòng chính: **log → rule → alert → case → verdict → tuning rule**.
 | [15-security-data-normalization.md](15-security-data-normalization.md) | Vì sao log phải chuẩn hóa (khác tên, nghĩa, giá trị, thời gian), parse khác normalize, vai trò ngữ nghĩa, bài toán N × M, vị trí của OCSF. |
 | [16-ocsf-data-model.md](16-ocsf-data-model.md) | Các thành phần của OCSF và công dụng (dictionary, kiểu dữ liệu, object, category/class/activity, `type_uid`, requirement, enum, profile, extension, phiên bản); ba trục của một event: đúng 1 class, 0..n profile, 0..n extension. |
 | [17-ocsf-event-anatomy.md](17-ocsf-event-anatomy.md) | Các nhóm field trong một event (phân loại, thời gian, kết quả, thực thể theo vai, finding, `observables`, `enrichments`, `metadata`, `unmapped`), mỗi nhóm dùng để làm gì và cách đọc một event. |
-| [18-asset-management.md](18-asset-management.md) | Asset, vòng đời asset management, các cách phát hiện tài sản, ba lớp asset profile, định danh tài sản, criticality khác risk, tài sản trong OCSF (`device`, class inventory). |
-| [19-asset-context-and-enrichment.md](19-asset-context-and-enrichment.md) | Quan hệ hai chiều giữa log và profile: event là một lần quan sát tài sản, enrichment đưa ngữ cảnh ngược vào event. |
+| [18-asset-inventory-and-profile.md](18-asset-inventory-and-profile.md) | Event khác trạng thái thực thể; asset inventory và asset profile là gì, ba lớp thuộc tính (khai báo, quan sát, tính toán), định danh, criticality, tài sản trong OCSF và chỗ OCSF để trống. |
+| [19-building-asset-profiles-from-events.md](19-building-asset-profiles-from-events.md) | Vòng 4 bước dựng profile từ event đã chuẩn hóa (thu thập, gộp, gập, nối ngược), IP là quan hệ có thời hạn, nối lúc nạp hay lúc truy vấn, cách Microsoft và Splunk hiện thực. |
 | [20-asset-context-in-security-operations.md](20-asset-context-in-security-operations.md) | Ngữ cảnh tài sản dùng vào việc gì trong phòng ngừa, phát hiện, ứng phó; vì sao severity khác priority. |
 
 ## Thuật ngữ nền
