@@ -13,15 +13,15 @@
   - `device`: mạnh, vì nguồn tự báo về máy nó chạy trên đó;
   - `src_endpoint`/`dst_endpoint`: yếu hơn, vì đây là một máy khác nhìn thấy, vd hostname do client tự khai.
 - **Phát hiện thụ động** là trường hợp đặc biệt: máy có agent trở thành *cảm biến* cho máy không có agent.
-  - Defender for Endpoint ở chế độ Basic chỉ nghe ARP, DHCP, mDNS, NBNS, LLMNR... mà các máy đã onboard nhìn thấy, rồi rút ra thông tin thiết bị. Theo tài liệu Microsoft, bất kỳ thiết bị nào giao tiếp với máy đã onboard đều có thể được phát hiện.
-  - Chế độ Standard dò chủ động thêm các máy chưa quản lý.
+  - Defender for Endpoint ở chế độ Basic chỉ nghe ARP, DHCP, mDNS, NBNS, LLMNR... mà các máy đã onboard nhìn thấy, rồi rút ra thông tin thiết bị. Theo tài liệu Microsoft, bất kỳ thiết bị nào giao tiếp với máy đã onboard *trong mạng corporate* đều có thể được phát hiện. Mạng được coi là corporate khi đa số máy báo cùng tên mạng, gateway và DHCP server. Thiết bị ở mạng khác không vào inventory.
+  - Chế độ Standard dò chủ động thêm các máy chưa quản lý, thường không quá một lần mỗi ba tuần cho mỗi thiết bị.
 
 ### Bước 2: Nhận diện và gộp (entity resolution)
-- **Là gì**: quyết định các quan sát nào thuộc *cùng một* tài sản, dựa trên định danh theo thứ tự tin cậy ([18](18-asset-inventory-and-profile.md)).
+- **Là gì**: quyết định các quan sát nào thuộc *cùng một* tài sản, dựa trên định danh, ưu tiên định danh bền hơn IP ([18](18-asset-inventory-and-profile.md)).
 - **Dùng để**: một máy có một hồ sơ, không phải mười.
 - Hai kiểu lỗi ngược chiều nhau:
-  - **Gộp quá tay**: hai máy khác nhau bị nhập làm một. Splunk ES cổ điển gộp các bản ghi trùng giá trị ở *bất kỳ* key field nào (`ip`, `mac`, `nt_host`, `dns`). Các workstation dùng lại IP DHCP vì thế có thể bị kéo về một tài sản. Bản vá là *entity zones*: tách bản ghi cùng khóa nhưng khác phân đoạn mạng.
-  - **Gộp quá ít**: một máy thành nhiều bản ghi. Defender ẩn bản trùng dựa trên hostname và last seen, nhưng bản trùng vẫn còn trong advanced hunting và alert. Bảng `DeviceInfo` giữ cột `MergedDeviceIds` cho các ID cũ của cùng máy.
+  - **Gộp quá tay**: hai máy khác nhau bị nhập làm một. Splunk ES cổ điển gộp các bản ghi trùng giá trị ở key field (`ip`, `mac`, `nt_host`, `dns`), và docs ghi rõ phép gộp không kiểm tra hay khử trùng đầu vào. Người dùng ES đã báo các workstation dùng lại IP DHCP bị kéo về một tài sản, và một load balancer trả lời máy quét bằng cùng một MAC gây gộp sai. Bản vá là *entity zones*: tách bản ghi cùng khóa nhưng khác phân đoạn mạng.
+  - **Gộp quá ít**: một máy thành nhiều bản ghi. Đổi tên, join domain, reimage hay một lần device discovery quét trúng máy đã onboard đều có thể sinh bản ghi mới. Defender *ẩn* bản trùng dựa trên hostname và last seen, nhưng bản trùng vẫn còn trong advanced hunting, alert và incident. Bảng `DeviceInfo` giữ cột `MergedDeviceIds` cho các ID cũ của cùng máy; tiêu chí gộp `DeviceId` thì Microsoft không công bố.
 - **Ưu tiên nguồn**: khi hai nguồn nói khác nhau về cùng một thuộc tính, chọn theo thứ hạng.
   - Splunk ES xếp hạng theo danh sách asset.
   - Splunk Asset and Risk Intelligence (ARI) xếp hạng theo nguồn *và theo từng field*, nên một nguồn có thể thắng ở field mà nó chính xác nhất.
@@ -51,7 +51,7 @@
   |---|---|---|
   | Ví dụ | Splunk ES khớp `src`/`dest`/`dvc` với asset lookup, thêm `src_priority`, `dest_category`; Microsoft join `DeviceInfo` vào bảng event | Google SecOps điền hostname khi event chỉ có IP; OCSF đặt `enrichments` vào event trước khi lưu |
   | Đúng ở | luôn có ngữ cảnh mới nhất (criticality vừa sửa) | giữ đúng ngữ cảnh *lúc sự việc xảy ra* |
-  | Sai ở | event cũ bị gán cho máy đang giữ IP *hôm nay* | ngữ cảnh bị "đóng băng"; event đến trước log DHCP thì không gán được |
+  | Sai ở | event cũ bị gán cho máy đang giữ IP *hôm nay* | ngữ cảnh bị "đóng băng"; event đến trước log DHCP thì chưa gán được (Google sửa lại event trong khoảng 24 giờ, quá hạn đó thì thôi) |
 
   Cách giải bền vững: lưu ánh xạ có khoảng hiệu lực, rồi nối theo cả định danh lẫn thời gian của event.
 - Trong OCSF, ngữ cảnh nối ngược đi vào `enrichments[]` (có `name`, `value`, `type`, `data`, `provider`), kèm `metadata.modified_time`; hoặc điền vào attribute còn trống của `device`.

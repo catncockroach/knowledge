@@ -34,9 +34,9 @@ Các cơ chế dưới đây cho thấy ngữ cảnh tài sản không chỉ đ�
 | Xếp ưu tiên alert | Criticality của tài sản là một yếu tố trong điểm ưu tiên incident 0–100 | Urgency của finding ghép severity của detection với `priority` của tài sản; risk factor dựng sẵn (phải bật) nhân điểm rủi ro 1,5 khi `dest_priority=critical` |
 | Ưu tiên lỗ hổng, phơi nhiễm | Device value (Low/Normal/High) đặt trọng số cho exposure score; attack path tới tài sản critical | Exposure Analytics kết hợp dữ liệu phơi nhiễm với ngữ cảnh tài sản |
 | Điều tra theo thực thể | Entity page: một timeline gồm alert và hoạt động của một máy | Trang entity: first/last discovery, liên kết IP, user theo thời gian |
-| Bất thường theo baseline | UEBA đánh dấu "lần đầu" và "hiếm so với nhóm", vd user lần đầu kết nối từ một thiết bị | Điểm rủi ro cộng dồn theo tài sản (risk object) |
+| Bất thường theo baseline | UEBA đánh dấu "lần đầu" và "hiếm so với nhóm", vd user lần đầu kết nối từ một thiết bị | Điểm rủi ro cộng dồn theo tài sản (risk object, ES 8 gọi là entity); các alias của cùng một tài sản được quy về một entity nhờ asset lookup |
 
-Chi tiết, nguồn và mức chắc chắn của từng cơ chế nằm trong [báo cáo research](../research/2026-10-29-asset-profile-tu-event-chuan-hoa/report.md). Phần Splunk chỉ đọc được qua trích đoạn tìm kiếm.
+Chi tiết, nguồn và mức chắc chắn của từng cơ chế nằm trong [báo cáo research](../research/2026-10-29-asset-profile-tu-event-chuan-hoa/report.md). Các cơ chế trong bảng đã được đối chiếu với trang docs gốc của Microsoft và Splunk.
 
 ## Cách hoạt động
 ```
