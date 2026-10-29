@@ -49,19 +49,24 @@ Inventory là tập các trạng thái thực thể. Profile là một dòng c�
   CIS Control 1 có safeguard riêng cho quét chủ động, cho dùng log DHCP để cập nhật inventory, và cho phát hiện thụ động.
 
 ### Định danh tài sản
-- **Là gì**: giá trị dùng để nhận ra cùng một tài sản giữa các nguồn. Thứ tự tin cậy mà các vendor dùng gần như giống nhau:
+- **Là gì**: giá trị dùng để nhận ra cùng một tài sản giữa các nguồn. Các nhóm định danh thường gặp:
   1. ID do agent hay nền tảng cấp (agent ID, cloud instance ID);
   2. định danh phần cứng (UUID máy, MAC);
   3. hostname, FQDN, DN trong AD;
   4. IP, chỉ có nghĩa trong một khoảng thời gian và một phạm vi mạng.
 - **Dùng để**: gộp các bản ghi về cùng một máy ([19](19-building-asset-profiles-from-events.md)).
+- Không có thứ tự tin cậy chung giữa các vendor. Mỗi nền tảng chọn thứ tự theo mục đích:
+  - Google SecOps chấm điểm rủi ro theo hostname (4) > MAC (3) > asset ID (2) > IP (1);
+  - khi enrichment, Google lại lấy `asset_id`, hostname, MAC làm khóa chính và chỉ dùng IP khi thiếu `asset_id`.
+
+  Nguyên tắc chung chỉ có một: *định danh bền trước, IP luôn kèm khoảng thời gian*.
 
 ### Criticality
 - **Là gì**: mức quan trọng của tài sản với nghiệp vụ. Căn cứ vào dịch vụ nó phục vụ, dữ liệu nó giữ, và vai trò hạ tầng: domain controller, PKI, backup thường ở mức cao nhất. Khác với *risk* (khả năng bị tấn công thành công).
 - **Dùng để**: biến cùng một alert thành mức ưu tiên khác nhau tùy máy.
 - Có hai cách gán, và các vendor đang kết hợp cả hai:
   - *khai báo*: người gán, vd field `priority` trong asset lookup của Splunk ES;
-  - *suy ra từ hành vi*: vd Microsoft Exposure Management tự nhận ra domain controller hay máy của domain admin, rồi xếp mức criticality.
+  - *suy ra từ hành vi*: vd Microsoft Exposure Management tự nhận ra domain controller hay máy của domain admin, rồi xếp vào một trong bốn mức (Very High đến Low). Mức này tự hạ khi điều kiện hết đúng: máy được nâng lên High vì truy cập file nhạy cảm sẽ trở về mức cũ sau 5 ngày liên tiếp không truy cập.
 
 ### Tài sản trong OCSF
 - **Object `device`**: mô tả một máy ở mọi nơi nó xuất hiện. Gồm định danh (`uid`, `uid_alt`, `hostname`, `ip`, `mac`, `os_machine_uuid`), ngữ cảnh khai báo (`owner`, `org`, `groups`, `zone`, `vpc_uid`), trạng thái quản lý (`is_managed`, `is_compliant`, `agent_list`), rủi ro (`risk_level_id`, `risk_score`) và thời gian (`first_seen_time`, `last_seen_time`).
