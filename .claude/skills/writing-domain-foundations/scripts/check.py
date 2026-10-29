@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Check a domain folder: README index matches files, names are kebab-case, links resolve."""
+"""Check a domain folder: README index matches files, names are kebab-case, links resolve.
+
+Also warns (exit code unaffected) when a topic file lacks the Q&A section.
+"""
 import re
 import sys
 from pathlib import Path
 
 NAME = re.compile(r"^(\d{2}-)?[a-z0-9]+(-[a-z0-9]+)*\.md$")
+QA = "## Câu hỏi và trả lời"
 LINK = re.compile(r"\[[^\]]*\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
 
@@ -40,8 +44,16 @@ def main() -> int:
                 continue
             if not (p.parent / target).exists():
                 errors.append(f"{p.name}: broken link {target}")
+    # Warn only: older domains predate the Q&A rule, and fixing them is a separate request.
+    warnings = [
+        f"{p.name}: no '{QA}' section"
+        for p in files
+        if not re.search(rf"^{QA}\s*$", p.read_text(encoding="utf-8"), re.M)
+    ]
     for e in dict.fromkeys(errors):
         print("ERROR:", e)
+    for w in warnings:
+        print("WARN:", w)
     if not errors:
         print(f"OK: {len(files)} files, README index complete")
     return 1 if errors else 0
