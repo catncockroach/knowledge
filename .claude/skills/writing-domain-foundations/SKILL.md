@@ -24,7 +24,7 @@ You write the stable, core knowledge of a field so the repo owner can learn or r
 
 ## 1. Frame the domain
 
-First list the repo root: if `<domain>/` exists, read its README and extend it instead of overwriting.
+First list the repo root: if `<domain>/` exists, read its README and extend it instead of overwriting. When extending, append new files after the last number by default, so existing links stay valid. Renumber only when the user asks for a reorganisation, or when a new file must be read before existing ones; then update every link and the README in the same change. If an older file already touches the new topic, keep it and add a cross-link to the new file instead of duplicating.
 
 Settle three things: the domain name, the **scope** (which sub-fields are in, which are out) and the reader's starting level (default: IT-literate, new to this field). If any of these would change the file list, invoke `grill-me` in Called mode: `Called by writing-domain-foundations. Settle: <open points>. Known so far: <one line>`. If the request is clear, choose the most sensible reading and record it in the README.
 
@@ -32,7 +32,7 @@ Done when you can state the scope in two sentences.
 
 ## 2. Outline
 
-Design the file list as a learning path: each file depends only on earlier ones. Split by concept cluster, not by length, and aim for 6–15 files (fewer for a narrow field). Show the user the list (file name + one-line meaning) and adapt it if they react. For a layered or staged field, make one file per layer or stage.
+Design the file list as a learning path: each file depends only on earlier ones. Split by concept cluster, not by length, and aim for 6–15 files (fewer for a narrow field). Show the user the list (file name + one-line meaning) in your progress message and keep going; wait for an answer only if the user asked to review the outline first. Adapt it if they react. For a layered or staged field, make one file per layer or stage.
 
 Then, for each file, list the learner questions it must answer, using the question kinds in [references/learner-questions.md](references/learner-questions.md). Any question the user has asked in the conversation goes on the list of the file it belongs to, and so does the general question behind it. If a question fits no file, the outline has a gap: fix the outline.
 
@@ -44,7 +44,7 @@ Write each file with the template in [references/file-template.md](references/fi
 
 - Teach the "why" and the mechanism, then the vocabulary. A reader should be able to rebuild the idea, not just recite it.
 - Give every component a **Là gì** and a **Dùng để**, in prose or in a table.
-- Answer the file's question list in the *Câu hỏi và trả lời* section: general rule first, then the asked case, then the boundary (when the rule bends, or what people confuse it with). Verify each general rule against the official spec or docs before stating it, since a wrong invariant misleads more than a wrong example.
+- Answer the file's question list in the *Câu hỏi và trả lời* section: general rule first, then the asked case, then the boundary (when the rule bends, or what people confuse it with). Verify each general rule against the official spec or docs before stating it, since a wrong invariant misleads more than a wrong example. If the spec host is unreachable, a reputable secondary source that quotes the spec is acceptable; name the rules verified that way when you deliver.
 - Use concrete examples (a real packet, a real command, a worked number) in preference to abstract definitions.
 - Cross-link related files with relative links. Link to concepts a file relies on that live in earlier files.
 - Add a diagram (ASCII or a Mermaid block) where structure or flow matters.

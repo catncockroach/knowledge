@@ -17,10 +17,10 @@ Use this structure for each topic file. Section titles are in Vietnamese. Drop a
 <Cơ chế từng bước, kèm sơ đồ nếu có cấu trúc hay luồng.>
 
 ## Ví dụ
-<Một ví dụ cụ thể: gói tin, lệnh, phép tính có số liệu.>
+<Một ví dụ cụ thể: gói tin, lệnh, phép tính có số liệu. Tên vendor, CA, phiên bản trong ví dụ dùng tên giả định để ví dụ không lỗi thời.>
 
 ## Câu hỏi và trả lời
-<4–8 câu người học sẽ hỏi (xem learner-questions.md). Mỗi câu: quy tắc tổng quát trước, áp vào trường hợp được hỏi, rồi ranh giới.>
+<Ít nhất 4 câu người học sẽ hỏi, cộng mọi câu chủ repo đã hỏi (xem learner-questions.md). Mỗi câu: quy tắc tổng quát trước, áp vào trường hợp được hỏi, rồi ranh giới.>
 
 **<Câu hỏi>?**
 <Quy tắc tổng quát.> <Áp vào trường hợp.> <Ranh giới.>

@@ -10,7 +10,7 @@ A foundations file is good when a learner can bring it any natural question abou
 
 ## Question kinds
 
-For each file, go through these kinds and keep the questions that matter for its topic (usually 4–8 per file):
+For each file, go through these kinds and keep the questions that matter for its topic (at least 4 per file; the owner's own questions are added on top and never dropped to stay under a count):
 
 | Kind | Typical wording (Vietnamese) | What the answer must give |
 |---|---|---|
