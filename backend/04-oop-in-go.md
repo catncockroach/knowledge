@@ -194,15 +194,74 @@ type OrderRepo struct{ *BaseRepo }
 - **"Encapsulation = getter/setter cho mọi field"**: mục tiêu là bảo vệ invariant; setter tùy tiện phá vỡ chính điều đó.
 - **"Khai báo interface lớn trước ở phía implement"**: trong Go nên khai báo interface nhỏ ở nơi dùng nó, khi thật sự cần thay thế được.
 
-## Câu hỏi ôn tập
-1. **Bốn tính chất của OOP là gì? Cho ví dụ.** Encapsulation, abstraction, inheritance, polymorphism; xem bảng đầu.
-2. **Abstraction khác encapsulation?** Abstraction: lộ ra "cái gì" (interface); encapsulation: giấu "thế nào" và bảo vệ trạng thái.
-3. **Overloading vs overriding?** Overloading: cùng tên, khác tham số, quyết định lúc biên dịch (Go không có). Overriding: lớp con định nghĩa lại method lớp cha, quyết định lúc chạy.
-4. **Go thay kế thừa bằng gì? Vì sao?** Embedding + interface; tránh cây kế thừa cứng và ràng buộc chặt.
-5. **Value receiver vs pointer receiver?** Xem phần method; nêu được ảnh hưởng tới method set.
-6. **Interface trong Go khác Java thế nào?** Implicit, không cần `implements`; khai báo phía consumer; nên nhỏ.
-7. **Composition over inheritance nghĩa là gì?** Ghép hành vi từ các thành phần nhỏ thay vì kế thừa sâu; linh hoạt và ít ràng buộc hơn.
-8. **Abstract class khác interface (Java)?** Abstract class có thể có state và method cài sẵn, chỉ kế thừa được một; interface chỉ là hợp đồng (Java 8+ có default method), implement được nhiều.
+## Câu hỏi và trả lời
+
+**Bốn tính chất của OOP là gì? Cho ví dụ.**
+> - **OOP (lập trình hướng đối tượng)**: cách tổ chức chương trình quanh các *object*, mỗi object gói dữ liệu và hành vi thao tác trên dữ liệu đó.
+>
+> Bốn tính chất đều phục vụ một mục tiêu: giảm độ phức tạp bằng cách cho mỗi phần chỉ biết những gì nó cần biết.
+> - **Encapsulation**: gói dữ liệu với method và giấu trạng thái bên trong. Ví dụ `Account` giữ `balance` unexported, chỉ cho đổi qua `Deposit`, `Withdraw` có kiểm tra số dư.
+> - **Abstraction**: chỉ lộ ra *cái gì* làm được, giấu *làm thế nào*. Ví dụ interface `PaymentGateway` có `Charge(amount)`, không lộ cách gọi API ngân hàng.
+> - **Inheritance**: kiểu mới tái sử dụng dữ liệu, hành vi của kiểu có sẵn. Ví dụ `Admin` kế thừa `User` (Java); Go thay bằng embedding.
+> - **Polymorphism**: cùng một lời gọi, mỗi kiểu xử lý theo cách riêng. Ví dụ `notifier.Send(msg)` gửi email hay SMS tùy implementation.
+>
+> Ranh giới: OOP không đồng nghĩa với "có class"; Go không có class và kế thừa nhưng vẫn đạt bốn mục tiêu này bằng struct, method, package và interface.
+
+**Abstraction khác encapsulation?**
+> - **Abstraction**: chọn lộ ra *giao diện* (cái gì làm được), để người dùng không phải nghĩ về chi tiết.
+> - **Encapsulation**: *giấu và bảo vệ* chi tiết cài đặt và trạng thái, để không ai sửa bừa.
+>
+> Tiêu chí phân biệt: abstraction nhìn từ phía *người dùng* (tôi cần biết gì để dùng?), encapsulation nhìn từ phía *người viết* (tôi giấu gì để giữ dữ liệu đúng?). Chúng bổ trợ nhau: interface `Storage` với `Save`, `Load` là abstraction; field kết nối DB unexported cùng constructor kiểm tra tham số là encapsulation.
+>
+> Ranh giới: có thể có cái này mà thiếu cái kia. Struct toàn field exported vẫn có thể có method trừu tượng tốt nhưng không được bao đóng; ngược lại một kiểu bao đóng kỹ nhưng lộ method quá chi tiết thì abstraction kém.
+
+**Overloading vs overriding?**
+> - **Overloading**: nhiều hàm cùng tên nhưng khác danh sách tham số trong cùng một phạm vi, vd `add(int, int)` và `add(double, double)`.
+> - **Overriding**: lớp con định nghĩa lại method đã có ở lớp cha với cùng chữ ký.
+>
+> Khác biệt cốt lõi là *thời điểm chọn hàm*: overloading được compiler chọn lúc biên dịch dựa vào kiểu đối số (static dispatch); overriding được chọn lúc chạy dựa vào kiểu thật của object (dynamic dispatch), đây là cơ chế của polymorphism trong ngôn ngữ có kế thừa.
+>
+> Ranh giới trong Go: không có overloading (mỗi tên một hàm, đặt tên khác như `AddInt`, `AddFloat`, hoặc dùng generics); không có overriding theo kế thừa. Method của kiểu ngoài "che" method của kiểu được embed, nhưng đó là shadowing, không phải dynamic dispatch: method của kiểu được embed gọi nội bộ vẫn gọi bản của chính nó. Polymorphism trong Go đi qua interface.
+
+**Go thay kế thừa bằng gì? Vì sao?**
+> - **Embedding**: nhúng một kiểu vào struct; field và method của kiểu đó được "nâng" lên, gọi trực tiếp được.
+> - **Interface**: tập method; mọi kiểu có đủ các method đó tự động thỏa interface.
+>
+> Go tách hai thứ mà kế thừa gộp làm một: *tái sử dụng code* dùng embedding (hoặc giữ field rồi gọi), *đa hình* dùng interface. Lý do là kế thừa ràng buộc chặt: lớp con phụ thuộc chi tiết lớp cha, cây kế thừa sâu khó đổi, và lớp con bị buộc nhận cả những hành vi không cần ("fragile base class").
+>
+> Ranh giới: embedding không tạo quan hệ "là một": struct `Admin` nhúng `User` không dùng được ở chỗ cần `User`; chỗ nào cần đa hình phải khai báo interface. Chi tiết và ví dụ ở phần *Inheritance và vì sao Go chọn composition* của file này.
+
+**Value receiver vs pointer receiver?**
+> - **Receiver**: tham số đặc biệt gắn method vào một kiểu, `func (u User) Name()` (value receiver) hoặc `func (u *User) Rename()` (pointer receiver).
+> - **Method set**: tập method gắn với một kiểu, quyết định kiểu đó thỏa interface nào.
+>
+> Receiver cũng là tham số, nên theo quy tắc pass-by-value: value receiver nhận *bản copy*, sửa không ảnh hưởng gốc; pointer receiver nhận địa chỉ, sửa được gốc và không copy struct lớn. Chọn pointer receiver khi method cần sửa trạng thái, struct lớn, hoặc struct chứa thứ không được copy (`sync.Mutex`). Một kiểu nên dùng thống nhất một loại.
+>
+> Ranh giới về method set: method set của `T` chỉ gồm method value receiver; method set của `*T` gồm cả hai. Vì vậy nếu `Save` có pointer receiver thì chỉ `*User` thỏa interface `Saver`, gán `User{}` vào biến `Saver` sẽ lỗi biên dịch. Gọi `u.Rename()` trên biến `u` addressable vẫn được vì Go tự lấy `&u`.
+
+**Interface trong Go khác Java thế nào?**
+> - **Interface**: hợp đồng gồm các chữ ký method; giá trị thuộc interface là bất kỳ kiểu nào thực hiện hợp đồng đó.
+> - **Implicit implementation**: kiểu thỏa interface chỉ nhờ có đủ method, không cần khai báo.
+>
+> Khác biệt gốc: Java khai báo tường minh `class A implements I`, nên interface phải có trước và người viết class phải biết nó; Go thỏa interface ngầm định, nên interface có thể được định nghĩa *sau*, ở phía *người dùng* (consumer) chỉ với những method họ cần. Hệ quả là interface Go thường nhỏ (1–3 method như `io.Reader`, `io.Writer`), dễ mock, và một kiểu tự động thỏa nhiều interface.
+>
+> Ranh giới: interface nhỏ là convention, không phải luật. Interface rỗng `any` nhận mọi giá trị nhưng mất kiểm tra kiểu. Một interface chứa con trỏ nil có kiểu cụ thể thì `!= nil`, lỗi kinh điển khi trả `error`.
+
+**Composition over inheritance nghĩa là gì?**
+> - **Composition**: tạo kiểu mới bằng cách *chứa* các thành phần nhỏ ("có một"), mỗi thành phần lo một việc.
+> - **Inheritance**: tạo kiểu mới bằng cách *mở rộng* kiểu có sẵn ("là một").
+>
+> Nguyên tắc: ưu tiên ghép hành vi từ các thành phần có interface rõ ràng thay vì xây cây kế thừa. Thành phần đổi được lúc chạy (truyền implementation khác), test riêng được, và không kéo theo hành vi thừa. Ví dụ `OrderService` chứa `Repository`, `Notifier`, `Clock`; muốn gửi SMS thay email chỉ truyền `Notifier` khác, không cần lớp con `SmsOrderService`.
+>
+> Ranh giới: kế thừa vẫn hợp lý khi quan hệ "là một" ổn định và nông, vd framework UI. Go không có kế thừa nên composition là cách mặc định; embedding là composition có cú pháp gọn.
+
+**Abstract class khác interface (Java)?**
+> - **Abstract class**: class không tạo object trực tiếp được, có thể có field (trạng thái), constructor, method đã cài đặt và method abstract chờ lớp con cài.
+> - **Interface (Java)**: hợp đồng gồm method abstract; từ Java 8 có thêm `default` và `static` method, nhưng không có field trạng thái của instance.
+>
+> Tiêu chí chọn: abstract class dùng khi các lớp con *cùng họ* chia sẻ trạng thái và code chung (quan hệ "là một"); interface dùng khi chỉ cần *khả năng* mà nhiều lớp không liên quan cùng có (`Comparable`, `Runnable`). Một class chỉ kế thừa *một* abstract class nhưng implement *nhiều* interface.
+>
+> Ranh giới: Go không có abstract class; phần "code chung" làm bằng embedding một struct cơ sở, phần "hợp đồng" làm bằng interface.
 
 ## Liên quan
 - [03-go-basics.md](03-go-basics.md): struct, pointer, package (cơ sở của encapsulation).

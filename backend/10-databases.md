@@ -256,17 +256,121 @@ for _, o := range orders {       // N query
 - **"Transaction là xong mọi race condition"**: ở Read Committed vẫn có lost update nếu đọc rồi ghi ở hai câu riêng; cần `FOR UPDATE`, optimistic locking hoặc update nguyên tử.
 - **"`DELETE` và `TRUNCATE` như nhau"**: `TRUNCATE` xóa toàn bộ nhanh, không chạy từng hàng, thường không lọc được bằng `WHERE` và có hành vi khác về trigger/rollback tùy DB.
 
-## Câu hỏi ôn tập
-1. **ACID là gì? Cho ví dụ.**
-2. **Các isolation level và hiện tượng tương ứng? Mặc định của PostgreSQL/MySQL?**
-3. **Index hoạt động thế nào? Khi nào không dùng được? Composite index và leftmost prefix?**
-4. **INNER JOIN vs LEFT JOIN? WHERE vs HAVING?**
-5. **Normalization là gì? 1NF, 2NF, 3NF? Khi nào denormalize?**
-6. **SQL vs NoSQL, khi nào chọn cái nào? CAP theorem?**
-7. **Pessimistic vs optimistic locking?**
-8. **N+1 query là gì, sửa thế nào?**
-9. **Viết truy vấn: top 3 khách hàng chi nhiều nhất tháng này; user chưa có đơn hàng.**
-10. **Vì sao phải dùng prepared statement / placeholder?** Chống SQL injection, xem [12-secure-coding.md](12-secure-coding.md).
+## Câu hỏi và trả lời
+
+**ACID là gì? Cho ví dụ.**
+> - **Transaction**: nhóm thao tác DB được xử lý như *một đơn vị*: hoặc tất cả thành công, hoặc như chưa có gì xảy ra.
+> - **ACID**: bốn đảm bảo của transaction: Atomicity, Consistency, Isolation, Durability.
+>
+> Ví dụ chuyển 100k từ tài khoản A sang B (trừ A, cộng B):
+> - **Atomicity (nguyên tử)**: cả hai lệnh cùng thành công hoặc cùng bị hủy; không có chuyện trừ A mà không cộng B.
+> - **Consistency (nhất quán)**: transaction đưa DB từ trạng thái hợp lệ sang trạng thái hợp lệ, mọi ràng buộc (`CHECK balance >= 0`, khóa ngoại) đều giữ.
+> - **Isolation (cô lập)**: transaction chạy đồng thời không thấy trạng thái dở dang của nhau; mức độ cô lập điều chỉnh bằng isolation level.
+> - **Durability (bền vững)**: đã commit thì dữ liệu còn kể cả khi mất điện ngay sau đó, nhờ ghi write-ahead log xuống đĩa trước khi báo commit.
+>
+> Ranh giới: Consistency một phần do DB đảm bảo (ràng buộc), phần còn lại do logic ứng dụng. Isolation thực tế thường không tuyệt đối vì mặc định không phải Serializable. Nhiều NoSQL đánh đổi một phần ACID lấy khả năng mở rộng.
+
+**Các isolation level và hiện tượng tương ứng? Mặc định của PostgreSQL/MySQL?**
+> - **Isolation level**: mức độ một transaction bị cô lập khỏi thay đổi của các transaction chạy đồng thời.
+> - **Dirty read**: đọc dữ liệu chưa commit. **Non-repeatable read**: đọc lại một hàng ra giá trị khác. **Phantom read**: chạy lại truy vấn khoảng thấy hàng mới xuất hiện hoặc biến mất.
+>
+> Quy tắc: level càng cao chặn càng nhiều hiện tượng nhưng càng giảm khả năng chạy đồng thời. Read Uncommitted chặn không gì; Read Committed chặn dirty read; Repeatable Read chặn thêm non-repeatable read; Serializable chặn tất cả, kết quả như các transaction chạy lần lượt. Bảng đầy đủ ở phần *Isolation level và các hiện tượng*. Mặc định: PostgreSQL là **Read Committed**, MySQL InnoDB là **Repeatable Read**.
+>
+> Ranh giới: chuẩn SQL chỉ quy định hiện tượng *tối thiểu* phải chặn, DB thực tế có thể chặn nhiều hơn: Repeatable Read của PostgreSQL (snapshot isolation) không có phantom read, InnoDB giảm phantom bằng gap lock. Lost update không nằm trong bảng chuẩn nhưng là lỗi hay gặp nhất ở Read Committed, phải xử lý bằng lock (xem câu về locking).
+
+**Index hoạt động thế nào? Khi nào không dùng được? Composite index và leftmost prefix?**
+> - **Index**: cấu trúc dữ liệu phụ (thường là B+ tree) lưu giá trị cột đã sắp xếp kèm vị trí hàng, giúp DB tìm hàng mà không quét cả bảng.
+> - **Composite index**: index trên nhiều cột theo thứ tự, vd `(user_id, created_at)`.
+> - **Leftmost prefix**: composite index chỉ dùng được khi truy vấn lọc theo các cột *từ trái sang*.
+>
+> Index biến tìm kiếm O(n) thành O(log n) nhờ dữ liệu đã sắp xếp, xem [05-data-structures.md](05-data-structures.md). Composite index sắp theo cột đầu, trong cùng giá trị cột đầu mới sắp theo cột hai, giống danh bạ sắp theo họ rồi tên. Vì vậy index `(user_id, created_at)` phục vụ `WHERE user_id = ?` và `WHERE user_id = ? AND created_at > ?`, nhưng không phục vụ `WHERE created_at > ?` một mình.
+>
+> Index không được dùng khi: áp hàm hay phép tính lên cột (`WHERE LOWER(email) = ?`, `WHERE YEAR(created_at) = 2026`); `LIKE '%abc'` bắt đầu bằng wildcard; so sánh khác kiểu gây ép kiểu ngầm; bỏ qua cột đầu của composite index; hoặc optimizer ước tính truy vấn trả về phần lớn bảng nên quét cả bảng rẻ hơn. Kiểm tra bằng `EXPLAIN`. Ranh giới: index tăng tốc đọc nhưng làm chậm ghi và tốn dung lượng, vì mỗi `INSERT`/`UPDATE` phải cập nhật mọi index liên quan.
+
+**INNER JOIN vs LEFT JOIN? WHERE vs HAVING?**
+> - **JOIN**: ghép hàng của hai bảng theo điều kiện, vd `orders.user_id = users.id`.
+> - **WHERE / HAVING**: hai mệnh đề lọc ở hai thời điểm khác nhau của truy vấn.
+>
+> JOIN khác nhau ở *hàng không khớp*: `INNER JOIN` chỉ giữ hàng khớp ở cả hai bảng; `LEFT JOIN` giữ mọi hàng của bảng trái, phía phải không khớp thì điền `NULL`. Ví dụ liệt kê *mọi* user kèm số đơn, kể cả user chưa có đơn, phải dùng LEFT JOIN.
+>
+> WHERE và HAVING khác nhau ở *thời điểm lọc*: thứ tự logic là `FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT`. `WHERE` lọc *từng hàng trước* khi gom nhóm, nên không dùng được hàm tổng hợp; `HAVING` lọc *nhóm sau* khi gom, nên dùng được `SUM`, `COUNT`. Lọc được ở WHERE thì nên đặt ở WHERE để giảm số hàng phải gom.
+>
+> Ranh giới: với LEFT JOIN, điều kiện lên bảng bên phải mà đặt trong `WHERE` sẽ loại các hàng `NULL` và biến nó thành INNER JOIN; muốn giữ thì đặt điều kiện vào `ON`.
+
+**Normalization là gì? 1NF, 2NF, 3NF? Khi nào denormalize?**
+> - **Normalization**: cách tổ chức bảng để mỗi sự thật chỉ lưu *một chỗ*, tránh dư thừa và bất thường khi cập nhật (sửa chỗ này quên chỗ kia).
+> - **Khóa chính**: cột (hoặc nhóm cột) xác định duy nhất một hàng.
+>
+> Các dạng chuẩn xây chồng lên nhau:
+> - **1NF**: mỗi ô chứa một giá trị nguyên tử, không có danh sách hay nhóm lặp (không lưu `"tag1,tag2"` trong một cột).
+> - **2NF**: đạt 1NF và mọi cột không khóa phụ thuộc vào *toàn bộ* khóa chính, không chỉ một phần của khóa ghép.
+> - **3NF**: đạt 2NF và cột không khóa không phụ thuộc vào cột không khóa khác (không phụ thuộc bắc cầu). Ví dụ `orders` không lưu `user_email`, vì email phụ thuộc `user_id` chứ không phụ thuộc đơn hàng.
+>
+> Denormalize là cố ý lưu trùng để *đọc nhanh hơn*, chấp nhận ghi phức tạp hơn: khi truy vấn đọc chiếm đa số và JOIN quá tốn, vd lưu sẵn `order_count` trong `users`, hoặc bảng báo cáo tổng hợp. Ranh giới: dữ liệu lịch sử như *giá lúc mua* lưu trong `order_items` không phải denormalize, vì đó là một sự thật khác với giá hiện tại của sản phẩm.
+
+**SQL vs NoSQL, khi nào chọn cái nào? CAP theorem?**
+> - **SQL (relational)**: dữ liệu theo bảng có schema cố định, quan hệ bằng khóa ngoại, truy vấn bằng SQL, transaction ACID.
+> - **NoSQL**: nhóm DB không theo mô hình bảng: document (MongoDB), key-value (Redis), wide-column (Cassandra), graph (Neo4j).
+> - **CAP theorem**: hệ thống phân tán khi xảy ra *phân mảnh mạng* (Partition) chỉ giữ được một trong hai: **Consistency** (mọi node trả dữ liệu mới nhất) hoặc **Availability** (mọi request đều được trả lời).
+>
+> Tiêu chí chọn là *hình dạng dữ liệu và kiểu truy cập*. Dữ liệu có quan hệ chặt, cần JOIN, cần transaction nhiều bảng (đơn hàng, thanh toán, kho) thì SQL. Dữ liệu schema thay đổi linh hoạt, truy cập theo một khóa, lượng ghi rất lớn cần mở rộng ngang dễ (session, cache, log, feed) thì NoSQL hợp hơn. Nhiều hệ thống dùng cả hai: PostgreSQL làm nguồn sự thật, Redis làm cache.
+>
+> Ranh giới của CAP: vì phân mảnh mạng là không tránh được, lựa chọn thực tế là khi mạng đứt thì ưu tiên C (từ chối phục vụ, CP) hay A (trả dữ liệu có thể cũ, AP). Khi mạng bình thường, đánh đổi là giữa độ trễ và tính nhất quán (PACELC). CAP chỉ nói về hệ thống phân tán; một PostgreSQL đơn lẻ không phải bài toán CAP.
+
+**Pessimistic vs optimistic locking?**
+> - **Pessimistic locking**: khóa dữ liệu *trước* khi sửa, giả định xung đột sẽ xảy ra; transaction khác phải chờ. Trong SQL: `SELECT ... FOR UPDATE`.
+> - **Optimistic locking**: không khóa, giả định xung đột hiếm; khi ghi mới kiểm tra dữ liệu có bị ai sửa từ lúc đọc không, thường bằng cột `version`.
+>
+> Cả hai cùng chống *lost update* (hai bên cùng đọc rồi cùng ghi, một bản bị đè). Tiêu chí chọn là *tần suất xung đột*: xung đột thường xuyên và retry tốn kém (trừ tồn kho hàng hot, trừ số dư) thì pessimistic; xung đột hiếm, thao tác đọc lâu (người dùng sửa form vài phút) thì optimistic.
+>
+> ```sql
+> UPDATE products SET stock = stock - 1, version = version + 1
+> WHERE id = 42 AND version = 7;   -- 0 hàng bị sửa nghĩa là có người sửa trước, đọc lại và thử lại
+> ```
+>
+> Ranh giới: pessimistic giữ khóa lâu làm giảm đồng thời và có thể deadlock; optimistic với xung đột cao gây retry liên tục. Với cập nhật đơn giản, câu lệnh nguyên tử có điều kiện (`SET stock = stock - 1 WHERE stock > 0`) tránh được cả hai.
+
+**N+1 query là gì, sửa thế nào?**
+> - **N+1 query**: lỗi hiệu năng khi lấy một danh sách N bản ghi bằng 1 query, rồi với *mỗi* bản ghi lại chạy thêm 1 query để lấy dữ liệu liên quan, tổng cộng N+1 query.
+>
+> Ví dụ lấy 100 đơn hàng rồi trong vòng lặp gọi `getUser(order.UserID)`: 101 lần đi về DB, mỗi lần tốn độ trễ mạng. Lỗi thường ẩn trong ORM (lazy loading) hoặc trong hàm gọi DB nằm trong vòng lặp. Sửa bằng cách lấy dữ liệu liên quan *theo lô*: dùng `JOIN` lấy luôn trong một query, hoặc chạy query thứ hai `WHERE user_id IN (...)`/`= ANY($1)` cho cả danh sách rồi ghép trong code (tổng 2 query); với ORM, dùng eager loading (`Preload`, `include`).
+>
+> Ranh giới: phát hiện bằng log query hoặc tracing (thấy hàng trăm query giống nhau trong một request). Dạng tương tự xảy ra với gọi API: gọi một service khác trong vòng lặp, sửa bằng endpoint batch.
+
+**Viết truy vấn: top 3 khách hàng chi nhiều nhất tháng này; user chưa có đơn hàng.**
+> - **Aggregation**: gom các hàng theo nhóm rồi tính tổng, đếm (`GROUP BY` + `SUM`, `COUNT`).
+> - **Anti-join**: lấy hàng của bảng này *không có* hàng tương ứng ở bảng kia.
+>
+> Dùng bảng `users` và `orders` ở đầu file. Top 3 khách chi nhiều nhất tháng này: lọc đơn đã thanh toán trong tháng, gom theo user, sắp giảm dần, lấy 3.
+>
+> ```sql
+> SELECT u.id, u.name, SUM(o.total) AS spent
+> FROM orders o
+> JOIN users u ON u.id = o.user_id
+> WHERE o.status = 'paid'
+>   AND o.created_at >= date_trunc('month', now())
+> GROUP BY u.id, u.name
+> ORDER BY spent DESC
+> LIMIT 3;
+> ```
+>
+> User chưa có đơn hàng: anti-join, viết bằng `NOT EXISTS` hoặc `LEFT JOIN ... IS NULL`.
+>
+> ```sql
+> SELECT u.id, u.email
+> FROM users u
+> WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);
+> ```
+>
+> Ranh giới: lọc thời gian bằng khoảng (`>=` đầu tháng) để dùng được index trên `created_at`, không bọc cột trong hàm. Tránh `NOT IN (SELECT user_id ...)`: nếu subquery có một giá trị `NULL` thì kết quả rỗng. Nếu hai khách bằng tiền nhau ở vị trí thứ 3, `LIMIT 3` cắt ngẫu nhiên; cần xử lý hòa thì dùng window function `RANK()`. `date_trunc` là cú pháp PostgreSQL, MySQL viết khác.
+
+**Vì sao phải dùng prepared statement / placeholder?**
+> - **SQL injection**: lỗ hổng khi dữ liệu người dùng được ghép thẳng vào chuỗi SQL, khiến dữ liệu bị hiểu thành lệnh.
+> - **Placeholder / prepared statement**: viết câu SQL với chỗ trống (`$1`, `?`) và gửi giá trị *riêng* khỏi câu lệnh.
+>
+> Quy tắc: khi câu lệnh và dữ liệu đi tách nhau, DB parse câu lệnh trước và luôn coi giá trị là *dữ liệu*, không bao giờ là cú pháp SQL, nên input như `' OR '1'='1` chỉ là một chuỗi bình thường. `db.QueryContext(ctx, "SELECT ... WHERE email = $1", email)` an toàn; `fmt.Sprintf("... WHERE email = '%s'", email)` thì không. Prepared statement còn cho DB tái sử dụng kế hoạch thực thi khi chạy nhiều lần.
+>
+> Ranh giới: placeholder chỉ thay được *giá trị*, không thay được tên bảng, tên cột hay `ASC/DESC`; những chỗ đó phải đối chiếu với danh sách cho phép (whitelist). Chi tiết ở [12-secure-coding.md](12-secure-coding.md).
 
 ## Liên quan
 - [05-data-structures.md](05-data-structures.md): B+ tree, hash table.

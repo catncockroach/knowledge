@@ -3,7 +3,7 @@
 Backend là phần chạy phía server của một hệ thống phần mềm: nhận request qua mạng, xử lý nghiệp vụ, lưu trữ dữ liệu và trả kết quả. Bộ ghi chú này gom kiến thức nền tảng mà một lập trình viên backend cần nắm, viết để ôn tập phỏng vấn, với **Go** là ngôn ngữ chính cho mọi ví dụ code. Nội dung là kiến thức tổng quát, không gắn với công ty, dự án hay sản phẩm cụ thể nào.
 
 ## Phạm vi
-- **Có:** kiến thức level **entry**: hệ điều hành, kiến trúc backend và cách đọc tài liệu giải pháp, Go cơ bản, OOP, cấu trúc dữ liệu, thuật toán, design pattern, clean code/SOLID/convention, lập trình đa luồng, database (SQL, NoSQL), unit test, lập trình an toàn, Git, debug, quy trình Agile/Scrum. Cuối mỗi file có mục **Câu hỏi ôn tập**.
+- **Có:** kiến thức level **entry**: hệ điều hành, kiến trúc backend và cách đọc tài liệu giải pháp, Go cơ bản, OOP, cấu trúc dữ liệu, thuật toán, design pattern, clean code/SOLID/convention, lập trình đa luồng, database (SQL, NoSQL), unit test, lập trình an toàn, Git, debug, quy trình Agile/Scrum. Cuối mỗi file có mục **Câu hỏi và trả lời**.
 - **Không (ở level này):** system design quy mô lớn, distributed systems chuyên sâu (consensus, distributed transaction), tối ưu hiệu năng Go chuyên sâu, Kubernetes vận hành chi tiết. Các phần này sẽ được bổ sung vào thư mục này khi lên level cao hơn. Kiến thức mạng (TCP/IP, DNS, HTTP, TLS) nằm ở domain [../internet/](../internet/README.md).
 - **Đối tượng:** người đã biết lập trình cơ bản, chuẩn bị phỏng vấn hoặc ôn lại cho vị trí backend developer entry level.
 
@@ -64,5 +64,5 @@ Backend là phần chạy phía server của một hệ thống phần mềm: nh
 
 ## Cách ôn tập gợi ý
 1. Đọc theo thứ tự một lượt, tự gõ lại và chạy các đoạn code Go (`go run`, `go test`).
-2. Trả lời to mục **Câu hỏi ôn tập** ở cuối mỗi file mà không nhìn đáp án; chỗ nào ấp úng thì đọc lại phần tương ứng.
+2. Tự trả lời to từng câu trong mục **Câu hỏi và trả lời** trước khi đọc phần trả lời bên dưới; chỗ nào ấp úng thì đọc lại phần tương ứng.
 3. Chuẩn bị 1–2 ví dụ thực tế của bản thân cho mỗi nhóm (một bug từng debug, một chỗ đã áp dụng design pattern, một lần xử lý conflict).

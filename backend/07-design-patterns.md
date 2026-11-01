@@ -277,14 +277,97 @@ func main() {
 - **"Adapter và Decorator giống nhau vì đều bọc object"**: Adapter đổi interface; Decorator giữ interface, thêm hành vi.
 - **"DI cần framework"**: DI chỉ là truyền dependency qua tham số; framework là tùy chọn.
 
-## Câu hỏi ôn tập
-1. **Ba nhóm design pattern? Mỗi nhóm cho 2 ví dụ.**
-2. **Cài Singleton thread-safe trong Go? Nhược điểm?** `sync.Once`; trạng thái toàn cục, khó test.
-3. **Factory giải quyết vấn đề gì?** Tách logic khởi tạo và chọn implementation khỏi nơi sử dụng.
-4. **Adapter dùng khi nào? Ví dụ?** Tích hợp thư viện/hệ thống có interface không khớp; bọc SDK thanh toán.
-5. **Dependency Injection là gì, lợi ích?** Truyền dependency từ ngoài qua interface; dễ test, lỏng ràng buộc.
-6. **Middleware trong HTTP server là pattern gì?** Decorator (và Chain of Responsibility).
-7. **Functional options là gì?** Cách cấu hình object bằng các hàm option có mặc định hợp lý.
+## Câu hỏi và trả lời
+
+**Ba nhóm design pattern? Mỗi nhóm cho 2 ví dụ.**
+> - **Design pattern**: lời giải đã được đặt tên cho một vấn đề thiết kế lặp đi lặp lại; là ý tưởng, không phải đoạn code copy được.
+>
+> Sách của Gang of Four chia pattern theo *vấn đề chúng giải quyết*:
+> - **Creational**: cách *tạo* object mà không để nơi dùng phụ thuộc vào cách tạo. Ví dụ Singleton, Factory Method, Builder.
+> - **Structural**: cách *ghép* các object, kiểu với nhau thành cấu trúc lớn hơn. Ví dụ Adapter, Decorator, Facade, Proxy.
+> - **Behavioral**: cách các object *phân chia trách nhiệm và giao tiếp*. Ví dụ Strategy, Observer, Chain of Responsibility.
+>
+> Ranh giới: Dependency Injection và Repository rất phổ biến trong backend nhưng không nằm trong 23 pattern gốc của GoF. Nhiều pattern sinh ra để bù cho hạn chế của ngôn ngữ hướng class; trong Go một số trở nên rất mỏng (Strategy chỉ là truyền một hàm hoặc interface).
+
+**Cài Singleton thread-safe trong Go? Nhược điểm?**
+> - **Singleton**: pattern đảm bảo một kiểu chỉ có *một* instance và có một điểm truy cập chung tới nó.
+> - **Thread-safe**: chạy đúng khi nhiều goroutine cùng gọi đồng thời.
+>
+> Trong Go dùng `sync.Once`: hàm khởi tạo chỉ chạy đúng một lần dù nhiều goroutine gọi cùng lúc, các goroutine khác chờ tới khi nó xong.
+>
+> ```go
+> var (
+>     instance *Config
+>     once     sync.Once
+> )
+>
+> func GetConfig() *Config {
+>     once.Do(func() { instance = loadConfig() })
+>     return instance
+> }
+> ```
+>
+> Nhược điểm: singleton là *trạng thái toàn cục* trá hình: phụ thuộc bị giấu (hàm gọi `GetConfig()` bên trong, nhìn chữ ký không biết), khó thay bằng bản giả khi test, và các test ảnh hưởng nhau qua trạng thái chung. Cách thường tốt hơn là tạo object một lần trong `main` rồi truyền vào nơi cần (Dependency Injection). Kiểm tra `if instance == nil` không có khóa là sai vì race condition.
+
+**Factory giải quyết vấn đề gì?**
+> - **Factory**: hàm hoặc object chịu trách nhiệm *tạo* object, thay cho nơi dùng tự gọi constructor cụ thể.
+>
+> Factory tách *quyết định tạo cái gì và tạo thế nào* khỏi *nơi dùng*. Nơi dùng chỉ biết interface, factory chọn implementation dựa trên cấu hình hay tham số, vd `NewStorage(cfg)` trả về `S3Storage` hoặc `LocalStorage` dưới dạng interface `Storage`. Thêm loại storage mới chỉ sửa factory, không sửa mọi nơi dùng. Factory cũng gom logic khởi tạo phức tạp (validate, giá trị mặc định) vào một chỗ.
+>
+> Ranh giới: trong Go, constructor `NewXxx` chính là dạng factory đơn giản nhất. Một factory với `switch` theo loại thì mỗi khi thêm loại vẫn phải sửa `switch`; nếu loại thêm thường xuyên có thể dùng bảng đăng ký (registry) để thêm mà không sửa.
+
+**Adapter dùng khi nào? Ví dụ?**
+> - **Adapter**: lớp bọc chuyển interface của một thành phần có sẵn thành interface mà code của mình mong đợi, giống đầu chuyển phích cắm.
+>
+> Dùng khi phải tích hợp thứ mình *không sửa được* (thư viện ngoài, SDK, hệ thống cũ) mà interface không khớp với interface của mình. Ví dụ code định nghĩa `PaymentGateway` với `Charge(ctx, amount)`; SDK của nhà cung cấp A có `CreateTransaction(req)` với cấu trúc riêng. Viết `providerAAdapter` thỏa `PaymentGateway`, bên trong chuyển tham số và gọi SDK. Nghiệp vụ không biết SDK nào đang dùng; đổi nhà cung cấp chỉ cần adapter mới.
+>
+> Ranh giới: Adapter đổi *interface*; Decorator giữ nguyên interface và thêm hành vi; Facade đưa ra một interface đơn giản cho cả một hệ thống phức tạp. Adapter còn là nơi chuyển lỗi của SDK thành lỗi của miền nghiệp vụ.
+
+**Dependency Injection là gì, lợi ích?**
+> - **Dependency**: thứ một thành phần cần để làm việc (repository, client gửi email, đồng hồ).
+> - **Dependency Injection (DI)**: thành phần *nhận* dependency từ bên ngoài (qua constructor, tham số) thay vì tự tạo bên trong.
+>
+> Quy tắc: thành phần khai báo nó cần *interface* gì, còn ai tạo và nối các phần với nhau là việc của tầng ngoài cùng (thường là `main`, gọi là composition root). Lợi ích: test dễ (truyền repository giả), lỏng ràng buộc (đổi implementation không sửa nơi dùng), phụ thuộc hiện rõ trong chữ ký constructor.
+>
+> ```go
+> func NewOrderService(repo OrderRepository, n Notifier) *OrderService
+> ```
+>
+> Ranh giới: DI là kỹ thuật, không bắt buộc framework; Go thường làm DI thủ công trong `main`, dự án lớn có thể dùng công cụ sinh code như Wire. Đây là cách hiện thực Dependency Inversion của SOLID, xem [08-clean-code-and-solid.md](08-clean-code-and-solid.md).
+
+**Middleware trong HTTP server là pattern gì?**
+> - **Middleware**: hàm bọc quanh một handler, chạy logic trước và/hoặc sau handler (log, xác thực, recover panic, đo thời gian).
+> - **Decorator**: pattern bọc một object bằng object khác *cùng interface* để thêm hành vi mà không sửa object gốc.
+> - **Chain of Responsibility**: pattern chuyển request qua một chuỗi bộ xử lý, mỗi bộ xử lý quyết định xử lý tiếp hay dừng.
+>
+> Middleware là Decorator: nhận `http.Handler`, trả `http.Handler`, nên bọc được nhiều lớp (`logging(auth(handler))`). Khi xếp thành chuỗi, nó cũng mang dáng Chain of Responsibility: middleware xác thực có thể trả 401 và không gọi handler kế tiếp.
+>
+> ```go
+> func Logging(next http.Handler) http.Handler {
+>     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+>         start := time.Now()
+>         next.ServeHTTP(w, r)
+>         log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
+>     })
+> }
+> ```
+>
+> Ranh giới: thứ tự bọc quyết định thứ tự chạy; recover nên nằm ngoài cùng, xác thực phải đứng trước handler.
+
+**Functional options là gì?**
+> - **Functional options**: cách cấu hình object trong Go bằng các hàm option truyền vào constructor dạng variadic: `NewServer(addr, WithTimeout(5*time.Second), WithTLS(cfg))`.
+>
+> Pattern giải bài toán: constructor có nhiều tham số tùy chọn mà Go không có tham số mặc định hay overloading. Mỗi option là một hàm sửa struct cấu hình; constructor đặt giá trị mặc định hợp lý trước rồi áp lần lượt các option. Thêm option mới không làm vỡ code đang gọi, gọi không option nào vẫn ra object dùng được, và tên option tự giải thích ý nghĩa.
+>
+> ```go
+> type Option func(*Server)
+>
+> func WithTimeout(d time.Duration) Option {
+>     return func(s *Server) { s.timeout = d }
+> }
+> ```
+>
+> Ranh giới: với vài tham số đơn giản, truyền một struct `Config` là đủ và dễ đọc hơn. Functional options là phiên bản Go của Builder, xem phần *Builder và Functional Options* của file này.
 
 ## Liên quan
 - [04-oop-in-go.md](04-oop-in-go.md): interface và composition là nền của các pattern.

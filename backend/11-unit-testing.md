@@ -232,14 +232,81 @@ Chu trình **Red → Green → Refactor**: viết test thất bại trước (re
 - **"Mock càng nhiều càng tốt"**: mock quá chi tiết (kiểm tra từng lời gọi nội bộ) làm test gãy mỗi lần refactor dù hành vi không đổi. Test hành vi đầu ra, không test cách cài đặt.
 - **"Test chỉ cần happy path"**: bug thường nằm ở ca biên và luồng lỗi.
 
-## Câu hỏi ôn tập
-1. **Unit test là gì? Khác integration test, E2E?** Xem test pyramid.
-2. **Mock, stub, fake khác nhau?**
-3. **Viết code thế nào để dễ unit test?** Interface, DI, pure function, không gọi trực tiếp thời gian/DB trong logic.
-4. **Table-driven test là gì? Vì sao Go chuộng nó?**
-5. **Coverage là gì? Bao nhiêu là đủ?** Không có con số tuyệt đối; ưu tiên phủ logic nghiệp vụ quan trọng và ca biên.
-6. **TDD là gì?**
-7. **Test hàm gọi DB/API ngoài thế nào?** Tách sau interface, dùng fake/mock cho unit test; integration test với DB thật trong container.
+## Câu hỏi và trả lời
+
+**Unit test là gì? Khác integration test, E2E?**
+> - **Unit test**: kiểm tra một đơn vị nhỏ (hàm, method, kiểu) *tách biệt* khỏi phụ thuộc bên ngoài như DB, mạng, file.
+> - **Integration test**: kiểm tra nhiều thành phần chạy *cùng nhau* với phụ thuộc thật hoặc gần thật (DB trong container, service khác).
+> - **E2E (end-to-end) test**: kiểm tra cả hệ thống từ góc nhìn người dùng, qua UI hoặc API công khai.
+>
+> Tiêu chí phân biệt là *phạm vi*: phạm vi càng rộng thì test càng sát thực tế nhưng càng chậm, dễ chập chờn (flaky) và khó chỉ ra chỗ lỗi. Vì vậy test pyramid khuyên: nhiều unit test (chạy trong mili giây, chạy mỗi lần lưu file), ít integration test hơn, rất ít E2E cho các luồng quan trọng nhất.
+>
+> Ranh giới: "unit" không nhất thiết là một hàm; có thể là một nhóm kiểu cùng phục vụ một hành vi, miễn không chạm I/O thật. Test gọi DB thật là integration test dù viết bằng `go test`.
+
+**Mock, stub, fake khác nhau?**
+> - **Test double**: tên chung cho mọi đối tượng giả đứng thay phụ thuộc thật trong test.
+> - **Stub**: trả về câu trả lời định sẵn, không kiểm tra gì. Ví dụ `GetUser` luôn trả một user cố định.
+> - **Mock**: được lập trình trước *kỳ vọng* về cách nó bị gọi (gọi method nào, mấy lần, tham số gì) và làm test fail nếu sai. Ví dụ kiểm tra `SendEmail` được gọi đúng một lần với đúng địa chỉ.
+> - **Fake**: implementation *chạy được thật* nhưng đơn giản hóa. Ví dụ repository lưu trong map thay vì DB.
+>
+> Tiêu chí phân biệt là *test kiểm tra cái gì*: stub và fake phục vụ kiểm tra *trạng thái/kết quả* (state verification); mock phục vụ kiểm tra *tương tác* (behavior verification). Ngoài ra còn **spy**: ghi lại các lời gọi để test xem lại sau.
+>
+> Ranh giới: test dựa quá nhiều vào mock bị gắn chặt vào cách cài đặt, refactor bên trong là vỡ test dù hành vi không đổi; ưu tiên kiểm tra kết quả, chỉ mock khi chính tương tác là hành vi cần kiểm tra (gửi email, gọi thanh toán). Trong Go, fake viết tay thường đủ; thư viện `gomock`, `testify/mock` dùng khi cần kiểm tra tương tác.
+
+**Viết code thế nào để dễ unit test?**
+> - **Testability**: mức độ dễ đặt code vào trạng thái mong muốn, gọi nó, và quan sát kết quả trong test.
+> - **Pure function**: hàm chỉ phụ thuộc đầu vào và chỉ tạo ra kết quả trả về, không có tác dụng phụ.
+>
+> Quy tắc: code dễ test khi mọi thứ *không kiểm soát được* (DB, mạng, thời gian, số ngẫu nhiên, biến môi trường) đi vào từ bên ngoài thay vì được gọi trực tiếp bên trong logic. Cụ thể: phụ thuộc khai báo bằng interface nhỏ và truyền qua constructor (Dependency Injection); tách logic tính toán thành pure function; thời gian truyền vào dưới dạng `now time.Time` hoặc interface `Clock` thay vì gọi `time.Now()` giữa logic; hàm nhỏ, làm một việc.
+>
+> Ranh giới: khó test thường là triệu chứng của thiết kế ràng buộc chặt, không phải vấn đề của test; sửa thiết kế, đừng tìm cách "hack" test. Không cần interface cho mọi thứ: phụ thuộc thuần (pure, nhanh, xác định) dùng trực tiếp được.
+
+**Table-driven test là gì? Vì sao Go chuộng nó?**
+> - **Table-driven test**: khai báo các ca kiểm thử thành một bảng (slice struct gồm input và kết quả mong đợi), rồi một vòng lặp chạy cùng một logic kiểm tra cho mọi ca.
+> - **Subtest**: test con chạy bằng `t.Run(name, ...)`, có tên riêng, chạy và báo lỗi riêng.
+>
+> ```go
+> tests := []struct {
+>     name  string
+>     input string
+>     want  bool
+> }{
+>     {"hợp lệ", "a@b.com", true},
+>     {"thiếu @", "ab.com", false},
+>     {"rỗng", "", false},
+> }
+> for _, tc := range tests {
+>     t.Run(tc.name, func(t *testing.T) {
+>         if got := IsValidEmail(tc.input); got != tc.want {
+>             t.Errorf("IsValidEmail(%q) = %v, want %v", tc.input, got, tc.want)
+>         }
+>     })
+> }
+> ```
+>
+> Go chuộng nó vì thêm ca mới chỉ là thêm một dòng, các ca biên nhìn thấy hết trong một bảng, không lặp code kiểm tra, và chạy riêng được một ca bằng `go test -run 'TestIsValidEmail/rỗng'`. Go không có framework assert trong thư viện chuẩn, nên bảng + vòng lặp là cách gọn nhất. Ranh giới: khi các ca cần setup hay kiểm tra rất khác nhau, bảng đầy field điều kiện trở nên khó đọc; tách thành test riêng.
+
+**Coverage là gì? Bao nhiêu là đủ?**
+> - **Code coverage**: tỷ lệ phần code (dòng, nhánh) được chạy ít nhất một lần khi chạy test. Trong Go: `go test -cover`, xem chi tiết bằng `-coverprofile` rồi `go tool cover -html`.
+>
+> Coverage đo code *đã được chạy qua*, không đo code *đã được kiểm tra đúng*: một test gọi hàm mà không assert gì vẫn tăng coverage. Vì vậy coverage tốt cho việc *tìm chỗ chưa test* (nhánh lỗi chưa ai chạm), không tốt làm mục tiêu. Không có con số đủ chung cho mọi dự án; nhiều team đặt ngưỡng khoảng 70–80% để chặn coverage tụt, nhưng điều quan trọng hơn là logic nghiệp vụ cốt lõi và các ca biên (lỗi, rỗng, giá trị giới hạn) được test có assert.
+>
+> Ranh giới: đuổi theo 100% khiến người ta test cả code tầm thường và viết test gắn chặt vào cài đặt. Coverage thấp ở code sinh tự động hay `main` là bình thường.
+
+**TDD là gì?**
+> - **TDD (Test-Driven Development)**: cách phát triển trong đó viết test *trước* code, theo chu trình ngắn lặp đi lặp lại.
+>
+> Chu trình **Red → Green → Refactor**: viết một test nhỏ cho hành vi tiếp theo và thấy nó fail (red, chứng tỏ test thực sự kiểm tra gì đó); viết code tối thiểu để test pass (green); dọn dẹp code và test mà vẫn giữ pass (refactor). Lợi ích: buộc nghĩ về hành vi và interface từ góc nhìn người dùng trước khi cài đặt, code sinh ra tự nhiên dễ test, và luôn có lưới an toàn khi refactor.
+>
+> Ranh giới: TDD là kỷ luật thiết kế, không phải cách duy nhất để có test tốt; viết test ngay sau code cũng được nếu vẫn kiểm tra hành vi. TDD khó áp với code khám phá (chưa biết mình cần gì) hoặc UI; hợp nhất với logic nghiệp vụ có quy tắc rõ.
+
+**Test hàm gọi DB/API ngoài thế nào?**
+> - **Phụ thuộc ngoài**: thứ nằm ngoài process (DB, API bên thứ ba, message queue), chậm và không xác định.
+> - **Testcontainers**: thư viện chạy DB thật trong container Docker tạm thời cho test.
+>
+> Quy tắc: tách *logic* khỏi *I/O* rồi test mỗi phần bằng công cụ phù hợp. Logic nghiệp vụ phụ thuộc interface (`UserRepository`, `PaymentGateway`), unit test dùng fake hay mock thay phụ thuộc thật: nhanh, chạy được mọi nơi, giả lập được cả ca lỗi (timeout, 500). Phần cài đặt thật (câu SQL, client HTTP) cần integration test: chạy với DB thật trong container để bắt lỗi cú pháp SQL, ràng buộc, migration; với API ngoài, dựng server giả bằng `httptest.NewServer` trả response mẫu.
+>
+> Ranh giới: mock DB không bao giờ phát hiện được câu SQL sai, nên repository phải có integration test. Không gọi API thật của bên thứ ba trong test tự động (chậm, tốn tiền, không ổn định); nếu cần thì dùng môi trường sandbox của họ, chạy riêng.
 
 ## Liên quan
 - [07-design-patterns.md](07-design-patterns.md): Dependency Injection.

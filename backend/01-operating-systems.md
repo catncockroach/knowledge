@@ -167,14 +167,63 @@ srv.Shutdown(shutdownCtx) // ngừng nhận request mới, chờ request đang x
 - **"`write` xong là dữ liệu đã nằm trên đĩa"**: nó mới ở page cache, mất điện có thể mất. Cần `fsync`.
 - **"Concurrency = parallelism"**: concurrency là cấu trúc chương trình xử lý nhiều việc xen kẽ; parallelism là thật sự chạy cùng lúc trên nhiều core.
 
-## Câu hỏi ôn tập
-1. **Process khác thread thế nào?** Process có không gian địa chỉ riêng, thread chia sẻ bộ nhớ của process nhưng có stack riêng; tạo thread rẻ hơn, giao tiếp dễ hơn nhưng phải đồng bộ.
-2. **System call là gì, ví dụ?** Cơ chế để ứng dụng yêu cầu kernel làm việc đặc quyền: `open`, `read`, `write`, `fork`, `socket`.
-3. **Virtual memory giải quyết gì?** Cô lập process, cho mỗi process không gian địa chỉ riêng, cho phép dùng swap và chia sẻ thư viện.
-4. **Stack và heap khác nhau?** Stack tự quản lý theo lời gọi hàm, nhanh, kích thước giới hạn; heap cấp phát động, do GC hoặc lập trình viên giải phóng.
-5. **Context switch là gì, vì sao tốn kém?** Lưu trạng thái luồng cũ và nạp luồng mới; tốn thời gian lưu/nạp thanh ghi, làm nguội cache CPU.
-6. **SIGTERM khác SIGKILL?** SIGTERM bắt được để dọn dẹp; SIGKILL không bắt được, process chết ngay.
-7. **Deadlock là gì?** Xem [09-concurrency.md](09-concurrency.md).
+## Câu hỏi và trả lời
+
+**Process khác thread thế nào?**
+> - **Process**: một chương trình đang chạy, được OS cấp tài nguyên riêng: không gian địa chỉ (virtual memory), file descriptor, biến môi trường. Dùng để cô lập các chương trình với nhau.
+> - **Thread**: luồng thực thi bên trong một process, là đơn vị mà OS lập lịch chạy trên CPU. Dùng để một chương trình làm nhiều việc cùng lúc.
+>
+> Quy tắc: process là đơn vị *sở hữu tài nguyên*, thread là đơn vị *thực thi*. Mọi thread trong cùng process dùng chung heap, biến toàn cục và file descriptor, nhưng mỗi thread có stack và thanh ghi riêng. Vì vậy tạo thread rẻ hơn tạo process, các thread trao đổi dữ liệu trực tiếp qua bộ nhớ chung, nhưng phải đồng bộ (mutex, channel) để tránh race condition.
+>
+> Ranh giới: process cô lập nên một process crash không kéo theo process khác; một thread làm hỏng bộ nhớ chung có thể làm sập cả process. Goroutine của Go không phải OS thread mà được runtime ghép lên một số ít thread, xem [09-concurrency.md](09-concurrency.md).
+
+**System call là gì, ví dụ?**
+> - **Kernel mode / user mode**: hai mức đặc quyền của CPU. Kernel chạy ở kernel mode, được chạm phần cứng; ứng dụng chạy ở user mode, bị hạn chế.
+> - **System call**: cổng duy nhất để chương trình ở user mode nhờ kernel làm một việc đặc quyền.
+>
+> Mọi thao tác chạm tài nguyên dùng chung (file, mạng, tiến trình, bộ nhớ) đều phải đi qua system call: CPU chuyển sang kernel mode, kernel kiểm tra quyền, làm việc rồi trả kết quả. Ví dụ: `open`, `read`, `write`, `close` cho file; `socket`, `accept`, `connect` cho mạng; `fork`, `execve`, `exit` cho tiến trình; `mmap` cho bộ nhớ.
+>
+> Ranh giới: lập trình viên ít khi gọi trực tiếp; hàm thư viện như `os.ReadFile` hay `fmt.Println` gọi hộ. Mỗi lần chuyển mode tốn chi phí, nên đọc/ghi theo khối lớn (buffer) nhanh hơn nhiều lần gọi nhỏ. `strace` cho xem process đang gọi những system call nào.
+
+**Virtual memory giải quyết gì?**
+> - **Địa chỉ ảo**: địa chỉ mà chương trình nhìn thấy, không phải vị trí thật trên RAM.
+> - **Page table**: bảng của OS (được MMU của CPU tra) ánh xạ từng trang ảo sang trang vật lý.
+>
+> Virtual memory cho mỗi process ảo giác có một không gian địa chỉ liền mạch, riêng của nó. Nhờ lớp ánh xạ này: process không đọc được bộ nhớ của nhau (cô lập); tổng bộ nhớ các process có thể lớn hơn RAM vì trang ít dùng được đẩy ra swap; nhiều process dùng chung một bản thư viện trên RAM; trang chỉ được cấp khi chạm tới lần đầu (lazy allocation).
+>
+> Ranh giới: truy cập trang không nằm trên RAM gây page fault; quá nhiều page fault ra đĩa (thrashing) làm máy chậm hẳn. Khi RAM và swap đều cạn, Linux kích hoạt OOM killer giết process.
+
+**Stack và heap khác nhau?**
+> - **Stack**: vùng nhớ của mỗi thread, cấp và thu theo lời gọi hàm (mỗi lời gọi đẩy một frame chứa biến cục bộ, tham số, địa chỉ trả về).
+> - **Heap**: vùng nhớ cấp phát động, sống độc lập với lời gọi hàm, dùng cho dữ liệu cần tồn tại lâu hơn hàm tạo ra nó.
+>
+> Tiêu chí phân biệt là *vòng đời*: dữ liệu chết khi hàm return thì đặt trên stack (cấp/thu chỉ là dịch con trỏ stack, rất nhanh, nhưng kích thước giới hạn); dữ liệu sống tiếp thì đặt trên heap (chậm hơn, cần GC hoặc lập trình viên giải phóng).
+>
+> Ranh giới: trong Go lập trình viên không chọn; compiler làm *escape analysis*: biến bị tham chiếu sau khi hàm return (trả về con trỏ, gán vào biến toàn cục) sẽ "escape" lên heap. Đệ quy quá sâu làm tràn stack (stack overflow); goroutine có stack nhỏ tự giãn nên ít gặp hơn thread.
+
+**Context switch là gì, vì sao tốn kém?**
+> - **Scheduler**: thành phần của kernel quyết định thread nào được chạy trên CPU, trong bao lâu.
+> - **Context switch**: việc CPU dừng thread đang chạy, lưu trạng thái của nó (thanh ghi, con trỏ lệnh, con trỏ stack) và nạp trạng thái của thread khác.
+>
+> Chi phí gồm phần trực tiếp (vào kernel, lưu/nạp thanh ghi) và phần gián tiếp lớn hơn: cache CPU và TLB đang chứa dữ liệu của thread cũ, thread mới chạy với cache "nguội" nên nhiều lần phải đọc RAM. Switch giữa hai process còn phải đổi page table, đắt hơn switch giữa hai thread cùng process.
+>
+> Ranh giới: switch xảy ra khi hết time slice, khi thread bị block (chờ I/O, chờ lock) hoặc khi có interrupt. Tạo hàng nghìn thread làm việc lặt vặt sẽ tốn thời gian vào switch; goroutine được runtime Go chuyển ở user space nên rẻ hơn nhiều.
+
+**SIGTERM khác SIGKILL?**
+> - **Signal**: thông báo bất đồng bộ kernel gửi tới process (vd do `kill`, Ctrl+C, hoặc do lỗi).
+> - **SIGTERM (15)**: yêu cầu process kết thúc một cách lịch sự. **SIGKILL (9)**: lệnh kernel giết process ngay.
+>
+> Khác biệt cốt lõi: SIGTERM *bắt được*, nên process có thể dọn dẹp (ngừng nhận request mới, xử lý nốt request đang chạy, đóng kết nối DB, flush log) rồi mới thoát; SIGKILL *không bắt, không bỏ qua được*, process chết ngay, không dọn dẹp gì. Vì vậy `kill` mặc định gửi SIGTERM, Docker và Kubernetes gửi SIGTERM trước, đợi một khoảng (mặc định 30 giây trên Kubernetes) rồi mới SIGKILL.
+>
+> Ranh giới: graceful shutdown của service Go dựa vào việc bắt SIGTERM (`signal.NotifyContext`) rồi gọi `server.Shutdown`. Process bị OOM killer giết cũng nhận SIGKILL, nên không kịp ghi log gì.
+
+**Deadlock là gì?**
+> - **Lock (khóa)**: cơ chế cho một thread độc quyền dùng một tài nguyên; thread khác muốn dùng phải chờ.
+> - **Deadlock**: tình trạng một nhóm thread chờ nhau vĩnh viễn, mỗi thread giữ một tài nguyên mà thread khác đang cần.
+>
+> Ví dụ kinh điển: thread A giữ khóa X và chờ khóa Y, thread B giữ Y và chờ X; cả hai không bao giờ chạy tiếp. Deadlock chỉ xảy ra khi đủ bốn điều kiện cùng lúc (mutual exclusion, hold and wait, no preemption, circular wait), nên phá một điều kiện là tránh được, cách phổ biến nhất là luôn lấy khóa theo cùng một thứ tự.
+>
+> Chi tiết bốn điều kiện và cách phát hiện trong Go: [09-concurrency.md](09-concurrency.md). Database cũng có deadlock giữa các transaction; DB tự phát hiện và hủy một bên, xem [10-databases.md](10-databases.md).
 
 ## Liên quan
 - [02-backend-architecture.md](02-backend-architecture.md): service chạy trên OS giao tiếp qua mạng ra sao.
