@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Check a domain folder: README index matches files, names are kebab-case, links resolve.
 
-Also warns (exit code unaffected) when a topic file lacks the Q&A section.
+Also warns (exit code unaffected) when a topic file lacks the Q&A section or its
+answers are not blockquotes on the lines below the question.
 """
 import re
 import sys
@@ -10,6 +11,27 @@ from pathlib import Path
 NAME = re.compile(r"^(\d{2}-)?[a-z0-9]+(-[a-z0-9]+)*\.md$")
 QA = "## Câu hỏi và trả lời"
 LINK = re.compile(r"\[[^\]]*\]\(([^)#\s]+)(?:#[^)]*)?\)")
+QUESTION = re.compile(r"^(\d+\.\s+)?\*\*(.+?)\*\*(.*)$")
+
+
+def qa_format_issues(text: str) -> list[str]:
+    """Each question stands on its own bold line; its '>' blockquote answer starts on a later line."""
+    lines = text.splitlines()
+    start = next(i for i, l in enumerate(lines) if re.match(rf"^{QA}\s*$", l))
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    issues = []
+    for i in range(start + 1, end):
+        m = QUESTION.match(lines[i])
+        if not m:
+            continue
+        q = m.group(2).strip()
+        if m.group(3).strip():
+            issues.append(f"answer to '{q}' is on the question's line (move it to the next line, as '>')")
+            continue
+        nxt = next((lines[j] for j in range(i + 1, end) if lines[j].strip()), "")
+        if not nxt.startswith(">"):
+            issues.append(f"'{q}' has no '>' blockquote answer")
+    return issues
 
 
 def main() -> int:
@@ -45,11 +67,13 @@ def main() -> int:
             if not (p.parent / target).exists():
                 errors.append(f"{p.name}: broken link {target}")
     # Warn only: older domains predate the Q&A rule, and fixing them is a separate request.
-    warnings = [
-        f"{p.name}: no '{QA}' section"
-        for p in files
-        if not re.search(rf"^{QA}\s*$", p.read_text(encoding="utf-8"), re.M)
-    ]
+    warnings = []
+    for p in files:
+        text = p.read_text(encoding="utf-8")
+        if not re.search(rf"^{QA}\s*$", text, re.M):
+            warnings.append(f"{p.name}: no '{QA}' section")
+            continue
+        warnings += [f"{p.name}: {w}" for w in qa_format_issues(text)]
     for e in dict.fromkeys(errors):
         print("ERROR:", e)
     for w in warnings:
