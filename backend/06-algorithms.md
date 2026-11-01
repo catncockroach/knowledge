@@ -260,14 +260,85 @@ Ví dụ backend: lấy 10 sản phẩm bán chạy nhất trong 1 triệu bản
 - **"Binary search dùng cho mọi mảng"**: chỉ đúng trên mảng đã sắp xếp.
 - **"Space complexity tính cả input"**: thường chỉ tính bộ nhớ phụ; đệ quy tốn bộ nhớ stack theo độ sâu.
 
-## Câu hỏi ôn tập
-1. **Big-O là gì? Vì sao bỏ hằng số?** Cận trên tốc độ tăng; khi n lớn, bậc cao nhất quyết định.
-2. **Độ phức tạp của binary search? Điều kiện?** O(log n), mảng đã sort.
-3. **So sánh merge sort và quick sort.** Cùng O(n log n) trung bình; merge stable, worst O(n log n), cần O(n) bộ nhớ; quick in-place, nhanh thực tế, worst O(n²), không stable.
-4. **Stable sort là gì, khi nào cần?** Giữ thứ tự phần tử bằng nhau; khi sort nhiều tiêu chí.
-5. **Bubble sort best case O(n) khi nào?** Mảng đã sort và có cờ dừng sớm.
-6. **BFS khác DFS?** Queue vs stack; BFS tìm đường ngắn nhất theo số cạnh.
-7. **Cài đặt binary search / một thuật toán sort trên bảng trắng.** Luyện lại các đoạn code trên, chú ý trường hợp biên: mảng rỗng, 1 phần tử, phần tử trùng.
+## Câu hỏi
+
+**Big-O là gì? Vì sao bỏ hằng số?**
+> - **Độ phức tạp thời gian**: số bước thuật toán thực hiện, biểu diễn theo kích thước đầu vào n.
+> - **Big-O**: ký hiệu *cận trên* của tốc độ tăng: f(n) = O(g(n)) nghĩa là khi n đủ lớn, f(n) không vượt quá c·g(n) với một hằng số c nào đó.
+>
+> Big-O trả lời câu hỏi "khi dữ liệu tăng gấp nhiều lần thì thời gian tăng thế nào", không phải "chạy mất bao nhiêu giây". Vì thế bỏ hằng số và bậc thấp: 3n² + 100n + 7 là O(n²), vì khi n lớn bậc cao nhất áp đảo, còn hằng số phụ thuộc máy, ngôn ngữ, compiler. Thứ tự thường gặp: O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ).
+>
+> Ranh giới: với n nhỏ, hằng số lại quyết định: insertion sort O(n²) nhanh hơn merge sort với mảng vài chục phần tử, nên thư viện sort thực tế kết hợp cả hai. Big-O thường nói về worst case; cũng có thể nói về bộ nhớ (độ phức tạp không gian).
+
+**Độ phức tạp của binary search? Điều kiện?**
+> - **Binary search**: tìm một giá trị trong dãy *đã sắp xếp* bằng cách so với phần tử giữa rồi loại bỏ một nửa không thể chứa nó.
+>
+> Mỗi bước loại một nửa, nên sau k bước còn n/2ᵏ phần tử; tìm xong khi còn 1, tức k = log₂ n. Độ phức tạp O(log n): một triệu phần tử chỉ cần khoảng 20 lần so sánh. Điều kiện: dữ liệu đã sắp xếp *và* truy cập ngẫu nhiên O(1) (array/slice). Trên linked list, đi tới phần tử giữa đã tốn O(n).
+>
+> Ranh giới: ý tưởng tổng quát hơn là "tìm biên của một điều kiện đơn điệu", dùng được cả khi không có mảng, vd tìm phiên bản đầu tiên gây lỗi (`git bisect`). Lỗi hay gặp: vòng lặp không dừng vì cập nhật biên sai, và tràn số khi tính `(lo+hi)/2` với số lớn; dùng `lo + (hi-lo)/2`. Go có sẵn `sort.Search` và `slices.BinarySearch`.
+
+**So sánh merge sort và quick sort.**
+> - **Merge sort**: chia mảng làm đôi, sắp xếp đệ quy từng nửa, rồi trộn hai nửa đã sắp xếp.
+> - **Quick sort**: chọn một *pivot*, chia mảng thành phần nhỏ hơn và lớn hơn pivot, rồi sắp xếp đệ quy từng phần.
+> - **Stable**: giữ thứ tự ban đầu của các phần tử bằng nhau. **In-place**: sắp xếp ngay trên mảng, không cần mảng phụ cỡ n.
+>
+> | | Merge sort | Quick sort |
+> |---|---|---|
+> | Trung bình | O(n log n) | O(n log n) |
+> | Worst case | O(n log n) | O(n²) khi pivot tệ (vd mảng đã sắp, chọn pivot đầu) |
+> | Bộ nhớ phụ | O(n) | O(log n) cho đệ quy |
+> | Stable | Có | Không |
+>
+> Tiêu chí chọn: cần đảm bảo worst case hoặc stable (sort nhiều tiêu chí, sort linked list, dữ liệu ngoài bộ nhớ) thì merge sort; cần nhanh trên mảng trong RAM thì quick sort, vì in-place và thân thiện cache. Ranh giới: thư viện thực tế dùng biến thể lai, vd `sort`/`slices.Sort` của Go dùng pattern-defeating quicksort (pdqsort) tránh được worst case O(n²).
+
+**Stable sort là gì, khi nào cần?**
+> - **Stable sort**: thuật toán sắp xếp giữ nguyên thứ tự tương đối của các phần tử có khóa bằng nhau.
+>
+> Cần stable khi sắp xếp theo *nhiều tiêu chí lần lượt* hoặc khi thứ tự ban đầu có ý nghĩa. Ví dụ danh sách đơn hàng đã theo thời gian, sort tiếp theo trạng thái bằng stable sort thì trong cùng trạng thái các đơn vẫn theo thời gian. Merge sort, insertion sort là stable; quick sort, heap sort, selection sort thì không.
+>
+> Ranh giới: nếu khóa so sánh đã phân biệt mọi phần tử (vd so sánh đầy đủ mọi tiêu chí trong một hàm) thì stable hay không không còn quan trọng. Trong Go, `sort.Sort`/`slices.Sort` không đảm bảo stable; cần thì dùng `sort.Stable` hoặc `slices.SortStableFunc`.
+
+**Bubble sort best case O(n) khi nào?**
+> - **Bubble sort**: duyệt mảng nhiều lượt, mỗi lượt đổi chỗ các cặp kề nhau sai thứ tự, phần tử lớn nhất "nổi" về cuối.
+> - **Best case**: đầu vào làm thuật toán chạy ít bước nhất.
+>
+> Bản gốc luôn chạy đủ n lượt nên là O(n²) kể cả với mảng đã sắp. Bản có *cờ dừng sớm* ghi nhận lượt nào không có lần đổi chỗ nào thì mảng đã sắp, dừng luôn. Với mảng đã sắp xếp sẵn, lượt đầu tiên không đổi gì, tổng cộng một lượt n−1 phép so sánh: O(n).
+>
+> Ranh giới: trung bình và worst case vẫn O(n²), nên bubble sort chỉ có giá trị học tập. Insertion sort cũng có best case O(n) với mảng gần như đã sắp và nhanh hơn trên thực tế, nên được dùng bên trong các thuật toán lai cho mảng nhỏ.
+
+**BFS khác DFS?**
+> - **Graph**: tập đỉnh và cạnh nối chúng; cây là trường hợp riêng của graph.
+> - **BFS (breadth-first search)**: duyệt *theo tầng*: thăm hết các đỉnh kề trước rồi mới đi xa hơn, dùng queue.
+> - **DFS (depth-first search)**: đi *sâu* theo một nhánh tới cùng rồi quay lui, dùng stack (hoặc đệ quy).
+>
+> Tiêu chí chọn là *câu hỏi cần trả lời*. BFS thăm đỉnh theo thứ tự khoảng cách tăng dần, nên tìm được đường đi ít cạnh nhất trong graph không trọng số, vd khoảng cách kết bạn. DFS hợp với bài toán cần đi hết một nhánh: kiểm tra liên thông, phát hiện chu trình, sắp xếp topo (thứ tự build dependency), sinh mọi tổ hợp bằng backtracking. Cả hai đều O(V + E) và cần đánh dấu đỉnh đã thăm để không lặp vô hạn.
+>
+> Ranh giới: BFS tốn bộ nhớ cho cả một tầng (graph rộng thì lớn); DFS đệ quy có thể tràn stack với graph rất sâu. Graph có trọng số thì đường ngắn nhất cần Dijkstra, không phải BFS.
+
+**Cài đặt binary search / một thuật toán sort trên bảng trắng.**
+> - **Bất biến vòng lặp (loop invariant)**: điều luôn đúng ở đầu mỗi vòng lặp; giữ được nó là cách chứng minh code đúng.
+>
+> Cách làm: nói rõ bất biến trước khi viết. Với binary search nửa mở `[lo, hi)`: "nếu target có trong mảng thì nó nằm trong `[lo, hi)`".
+>
+> ```go
+> func search(a []int, target int) int {
+>     lo, hi := 0, len(a) // tìm trong [lo, hi)
+>     for lo < hi {
+>         mid := lo + (hi-lo)/2
+>         switch {
+>         case a[mid] == target:
+>             return mid
+>         case a[mid] < target:
+>             lo = mid + 1
+>         default:
+>             hi = mid
+>         }
+>     }
+>     return -1
+> }
+> ```
+>
+> Sau đó tự chạy tay các ca biên: mảng rỗng, một phần tử, target nhỏ hơn mọi phần tử, lớn hơn mọi phần tử, phần tử trùng (bản trên trả về một vị trí bất kỳ; muốn vị trí đầu tiên thì khi bằng vẫn đặt `hi = mid`). Với sort, nên chọn insertion sort hoặc merge sort vì dễ viết đúng; code mẫu ở phần *Cách hoạt động* của file này.
 
 ## Liên quan
 - [05-data-structures.md](05-data-structures.md): các cấu trúc mà thuật toán chạy trên đó.

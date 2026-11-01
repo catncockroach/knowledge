@@ -179,14 +179,64 @@ _, exists := set["go"]
 - **"float đủ chính xác cho tiền"**: sai số làm tròn tích lũy; dùng số nguyên đơn vị nhỏ nhất hoặc decimal.
 - **"BST luôn O(log n)"**: chỉ khi cân bằng.
 
-## Câu hỏi ôn tập
-1. **Array khác linked list?** Liên tiếp vs rải rác; truy cập O(1) vs O(n); chèn giữa O(n) vs O(1) khi có vị trí.
-2. **Hash table hoạt động thế nào? Xử lý collision?** Băm key → bucket; chaining hoặc open addressing; rehash khi load factor cao.
-3. **Stack vs queue, ứng dụng?** LIFO (call stack, undo, DFS) vs FIFO (BFS, job queue).
-4. **Vì sao index DB dùng B+ tree mà không dùng hash?** B+ tree giữ thứ tự, hỗ trợ range query và sort, ít lần đọc đĩa; hash chỉ tốt cho so sánh bằng.
-5. **Heap dùng làm gì?** Priority queue, top-K, heap sort.
-6. **int32 tràn thì sao? Vì sao 0.1 + 0.2 != 0.3?** Quay vòng theo bù hai; float nhị phân không biểu diễn chính xác 0.1.
-7. **Amortized O(1) của append nghĩa là gì?** Thỉnh thoảng tốn O(n) để copy, nhưng chia đều trên nhiều lần thì trung bình O(1).
+## Câu hỏi
+
+**Array khác linked list?**
+> - **Array**: các phần tử nằm *liên tiếp* trong bộ nhớ, truy cập bằng chỉ số.
+> - **Linked list**: các node nằm rải rác, mỗi node giữ dữ liệu và con trỏ tới node kế tiếp (và node trước, nếu là doubly linked list).
+>
+> Mọi khác biệt đến từ cách đặt trong bộ nhớ. Liên tiếp nên array tính được địa chỉ phần tử thứ i ngay (truy cập O(1)) và thân thiện với cache CPU, nhưng chèn/xóa ở giữa phải dời các phần tử phía sau (O(n)). Rải rác nên linked list phải đi từ đầu để tới phần tử thứ i (O(n)), nhưng khi đã đứng ở vị trí cần thì chèn/xóa chỉ đổi vài con trỏ (O(1)).
+>
+> Ranh giới: trên máy thực, array (slice) thường thắng cả ở thao tác chèn với dữ liệu vừa phải nhờ cache, nên linked list chỉ đáng dùng khi chèn/xóa ở giữa rất nhiều và đã giữ sẵn con trỏ node, vd LRU cache (hash map + doubly linked list).
+
+**Hash table hoạt động thế nào? Xử lý collision?**
+> - **Hash function**: hàm biến key thành một số; cùng key luôn ra cùng số.
+> - **Bucket**: ô trong mảng nội bộ, được chọn bằng `hash(key) % số_bucket`.
+> - **Collision**: hai key khác nhau rơi vào cùng bucket.
+> - **Load factor**: số phần tử chia số bucket, đo độ "đầy".
+>
+> Hash table đạt tra cứu, chèn, xóa O(1) trung bình bằng cách tính thẳng ra vị trí thay vì tìm. Collision là không tránh được và có hai cách xử lý: *chaining* (mỗi bucket giữ một danh sách các phần tử) hoặc *open addressing* (tìm ô trống kế tiếp theo một quy luật dò). Khi load factor vượt ngưỡng, bảng tạo mảng bucket lớn hơn và *rehash* mọi phần tử để giữ các danh sách ngắn.
+>
+> Ranh giới: worst case là O(n) khi mọi key dồn vào một bucket (hash kém hoặc bị tấn công cố ý). Hash table không giữ thứ tự: duyệt `map` trong Go có thứ tự ngẫu nhiên. Key phải so sánh được bằng `==`, nên slice không làm key được.
+
+**Stack vs queue, ứng dụng?**
+> - **Stack**: cấu trúc LIFO (vào sau ra trước), thao tác `push` và `pop` ở cùng một đầu.
+> - **Queue**: cấu trúc FIFO (vào trước ra trước), thêm ở cuối, lấy ở đầu.
+>
+> Tiêu chí chọn là *thứ tự cần xử lý*: việc mới nhất phải xong trước (quay lại điểm gần nhất) thì dùng stack; việc đến trước phục vụ trước (công bằng theo thời gian) thì dùng queue. Stack: call stack của chương trình, undo, kiểm tra ngoặc đúng, DFS. Queue: BFS, hàng đợi công việc, buffer giữa producer và consumer, message queue.
+>
+> Ranh giới: cả hai đều O(1) mỗi thao tác. Trong Go, stack làm bằng slice (append, cắt cuối); queue làm bằng slice thì cắt đầu có thể giữ bộ nhớ cũ, nên dùng ring buffer hoặc channel có buffer. Priority queue không phải queue FIFO mà là heap.
+
+**Vì sao index DB dùng B+ tree mà không dùng hash?**
+> - **Index**: cấu trúc dữ liệu phụ giúp DB tìm dòng mà không quét cả bảng.
+> - **B+ tree**: cây cân bằng nhiều nhánh, mỗi node là một trang đĩa chứa nhiều key đã sắp xếp; dữ liệu nằm ở lá và các lá nối với nhau theo thứ tự.
+>
+> Tiêu chí là *loại truy vấn và chi phí đọc đĩa*. B+ tree giữ key theo thứ tự nên phục vụ được cả `=`, `<`, `>`, `BETWEEN`, `ORDER BY`, tiền tố `LIKE 'abc%'` (tìm điểm đầu rồi đi dọc các lá). Mỗi node chứa hàng trăm key nên cây rất thấp, tìm trong hàng triệu dòng chỉ cần vài lần đọc trang. Hash index chỉ trả lời được so sánh bằng.
+>
+> Ranh giới: hash index vẫn có chỗ dùng (PostgreSQL có `USING hash`, nhiều key-value store và hash join dùng hash) khi chỉ cần tra cứu bằng. Cách index được dùng hay bỏ qua: [10-databases.md](10-databases.md).
+
+**Heap dùng làm gì?**
+> - **Heap (cấu trúc dữ liệu)**: cây nhị phân gần đầy, lưu trong mảng, thỏa *heap property*: node cha luôn nhỏ hơn (min-heap) hoặc lớn hơn (max-heap) các con.
+> - **Priority queue**: hàng đợi lấy ra phần tử ưu tiên cao nhất trước, thay vì phần tử đến trước.
+>
+> Heap cho lấy phần tử nhỏ nhất/lớn nhất trong O(1) và thêm/xóa trong O(log n), nên là cách cài priority queue tiêu chuẩn. Ứng dụng: lập lịch công việc theo độ ưu tiên hay thời hạn, thuật toán Dijkstra, top-K phần tử (giữ min-heap kích thước K), gộp K danh sách đã sắp xếp, heap sort. Go có gói `container/heap`.
+>
+> Ranh giới: heap không sắp xếp hoàn toàn; chỉ đỉnh là được đảm bảo, nên không tìm nhanh được phần tử bất kỳ. Heap cấu trúc dữ liệu không liên quan tới vùng nhớ heap của OS ([01-operating-systems.md](01-operating-systems.md)), chỉ trùng tên.
+
+**int32 tràn thì sao? Vì sao 0.1 + 0.2 != 0.3?**
+> - **Bù hai (two's complement)**: cách máy tính biểu diễn số nguyên có dấu; `int32` chứa được từ −2³¹ đến 2³¹−1.
+> - **Floating point (IEEE 754)**: cách biểu diễn số thực dạng nhị phân với số bit hữu hạn cho phần định trị và số mũ.
+>
+> Quy tắc chung: số trong máy có *số bit hữu hạn*, nên có giới hạn phạm vi và độ chính xác. Số nguyên vượt giới hạn thì quay vòng: trong Go `int32(2147483647) + 1` thành `-2147483648`, không báo lỗi. Số thực bị làm tròn: 0.1 và 0.2 là phân số nhị phân vô hạn (giống 1/3 trong thập phân), lưu bằng xấp xỉ, cộng lại ra `0.30000000000000004`.
+>
+> Hệ quả: so sánh float dùng sai số cho phép (`math.Abs(a-b) < eps`); tiền tệ không dùng float mà lưu số nguyên theo đơn vị nhỏ nhất (đồng, cent) hoặc kiểu decimal. Overflow nguyên âm thầm là nguồn lỗi bảo mật, kiểm tra trước khi cộng hay nhân số lớn.
+
+**Amortized O(1) của append nghĩa là gì?**
+> - **Độ phức tạp amortized (khấu hao)**: chi phí *trung bình mỗi thao tác* tính trên một dãy dài thao tác, không phải chi phí của từng lần riêng lẻ.
+>
+> `append` thường chỉ ghi vào chỗ trống (O(1)); thỉnh thoảng hết `cap` thì phải cấp phát mảng mới và copy n phần tử (O(n)). Vì cap tăng theo cấp số nhân (gấp đôi), các lần copy ngày càng thưa: tổng công copy cho n lần append là khoảng 1 + 2 + 4 + ... + n < 2n, chia cho n lần thì mỗi lần trung bình O(1).
+>
+> Ranh giới: amortized không phải average theo xác suất; đây là đảm bảo chắc chắn cho cả dãy. Nhưng một lần append cụ thể vẫn có thể chậm, điều đáng kể với hệ thống cần độ trễ ổn định. Nếu cap chỉ tăng thêm một hằng số mỗi lần thì tổng chi phí là O(n²), mất tính chất này.
 
 ## Liên quan
 - [03-go-basics.md](03-go-basics.md): slice, map, string trong Go.

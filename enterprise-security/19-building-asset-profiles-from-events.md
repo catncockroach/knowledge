@@ -91,7 +91,7 @@ Firewall ghi một kết nối từ `10.20.4.12` lúc 09:02, event OCSF chỉ c�
 
 Nếu cùng IP xuất hiện lúc 16:00 thì lease đã hết. Gán nó cho `WS-0412` là sai.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Một event đóng góp gì cho profile, và một profile cần bao nhiêu event?**
 Mỗi event có tài sản đóng góp *một quan sát*: tài sản tồn tại, có vài thuộc tính, tại một thời điểm, theo một nguồn. Profile là kết quả gập *mọi* quan sát của tài sản đó. Vì vậy profile càng đầy đủ khi càng nhiều nguồn thấy tài sản. Một máy chỉ được firewall thấy có profile mỏng (IP, last seen); máy có agent có profile dày (OS, phần mềm, user). Ranh giới: quan sát ở vai `src_endpoint` (hostname do client khai) đóng góp ít tin cậy hơn quan sát ở vai `device`.

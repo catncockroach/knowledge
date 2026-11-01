@@ -136,14 +136,78 @@ Bug: tổng tiền sai lệch vài đồng. Breakpoint ở hàm tính tổng, wa
 - **"Lỗi chập chờn là do máy/mạng"**: lỗi không ổn định thường là race condition, timeout, phụ thuộc thứ tự hay dữ liệu cụ thể. Chạy `-race`, log nhiều ngữ cảnh hơn.
 - **"Thay nhiều thứ cùng lúc cho nhanh"**: khi hết lỗi bạn không biết thay đổi nào có tác dụng.
 
-## Câu hỏi ôn tập
-1. **Quy trình debug của bạn?** Tái hiện → đọc lỗi → thu hẹp → giả thuyết → kiểm chứng → sửa gốc → test.
-2. **Step over, step into, step out khác nhau?**
-3. **Conditional breakpoint dùng khi nào?**
-4. **Debug Go bằng công cụ gì?** Delve, IDE, pprof, `-race`.
-5. **Gặp lỗi trên production nhưng local không bị, làm gì?** So sánh môi trường, cấu hình, dữ liệu, tải; dựa vào log, metrics, trace.
-6. **Đọc stack trace panic thế nào?**
-7. **Service bị chậm dần/tốn RAM dần, nghi ngờ gì?** Rò rỉ goroutine, kết nối không đóng, cache không giới hạn; dùng pprof.
+## Câu hỏi
+
+**Quy trình debug của bạn?**
+> - **Bug**: chênh lệch giữa hành vi mong đợi và hành vi thực tế của chương trình.
+> - **Root cause (nguyên nhân gốc)**: điểm sai đầu tiên trong chuỗi nhân quả dẫn tới bug, khác với *triệu chứng* nơi lỗi lộ ra.
+>
+> Debug là áp dụng phương pháp khoa học: thu hẹp khoảng tìm kiếm bằng giả thuyết có kiểm chứng, không phải đoán mò. Các bước:
+> 1. **Tái hiện** được lỗi một cách ổn định, càng nhỏ càng tốt.
+> 2. **Đọc kỹ** thông báo lỗi, stack trace, log quanh thời điểm lỗi.
+> 3. **Thu hẹp** vùng nghi ngờ: chia đôi code hay dữ liệu, `git bisect` tìm commit gây lỗi.
+> 4. **Đặt giả thuyết** cụ thể ("biến X nil vì cache trả về rỗng").
+> 5. **Kiểm chứng** bằng debugger, log, hoặc test, mỗi lần đổi một thứ.
+> 6. **Sửa nguyên nhân gốc**, không chỉ chặn triệu chứng.
+> 7. **Viết test** tái hiện lỗi để nó không quay lại, và kiểm tra chỗ khác có cùng lỗi không.
+>
+> Ranh giới: bị kẹt quá lâu thì giải thích vấn đề cho người khác (hoặc "con vịt cao su"), thường tự thấy chỗ giả định sai. Chi tiết ở phần *Quy trình debug có phương pháp* của file này.
+
+**Step over, step into, step out khác nhau?**
+> - **Debugger**: công cụ cho dừng chương trình tại một điểm, xem biến và chạy tiếp từng bước (trong Go là Delve, tích hợp vào IDE).
+> - **Breakpoint**: điểm trong code mà debugger dừng chương trình lại.
+>
+> Ba lệnh khác nhau ở cách xử lý *lời gọi hàm* trên dòng hiện tại:
+> - **Step over**: chạy hết dòng hiện tại, coi lời gọi hàm là một bước, dừng ở dòng kế tiếp của hàm đang đứng.
+> - **Step into**: đi *vào bên trong* hàm được gọi ở dòng hiện tại, dừng ở dòng đầu của hàm đó.
+> - **Step out**: chạy nốt hàm hiện tại, dừng ở chỗ ngay sau nơi đã gọi nó.
+>
+> Cách dùng: step over khi tin hàm được gọi đúng, step into khi nghi ngờ nó, step out khi lỡ vào một hàm không liên quan. **Continue** chạy tới breakpoint tiếp theo. Ranh giới: step into vào hàm thư viện chuẩn thường lạc vào code không cần quan tâm; đặt breakpoint ở nơi nghi ngờ rồi continue thường nhanh hơn step từng dòng.
+
+**Conditional breakpoint dùng khi nào?**
+> - **Conditional breakpoint**: breakpoint chỉ dừng khi một biểu thức điều kiện đúng, vd `userID == 42` hay `i > 9990`.
+>
+> Dùng khi đoạn code chạy *rất nhiều lần* mà lỗi chỉ xảy ra ở một lần cụ thể: một phần tử trong vòng lặp hàng nghìn lần, một user cụ thể trong hàng loạt request, một giá trị bất thường (`amount < 0`). Breakpoint thường sẽ dừng ở mọi lần, phải bấm continue hàng trăm lần.
+>
+> Ranh giới: debugger phải đánh giá điều kiện mỗi lần đi qua nên làm chương trình chậm đi đáng kể ở vòng lặp nóng. Biến thể liên quan: *hit count* (dừng ở lần thứ N) và *logpoint* (in giá trị mà không dừng). Nếu điều kiện phức tạp, thêm tạm một `if` trong code rồi đặt breakpoint thường bên trong cũng được.
+
+**Debug Go bằng công cụ gì?**
+> - **Delve (`dlv`)**: debugger chuẩn cho Go, hiểu goroutine, interface, slice; IDE (VS Code, GoLand) dùng nó bên dưới.
+> - **pprof**: profiler tích hợp của Go, đo CPU, bộ nhớ, goroutine, lock.
+> - **Race detector**: chế độ build `-race` phát hiện data race lúc chạy.
+>
+> Chọn công cụ theo *loại vấn đề*:
+> - Logic sai: test + Delve (breakpoint, xem biến, xem stack từng goroutine).
+> - Lỗi đồng thời: `go test -race`, xem trạng thái goroutine bằng pprof `goroutine` hoặc `kill -QUIT` để in mọi stack.
+> - Chậm, tốn CPU, tốn RAM: pprof (`net/http/pprof` cho service đang chạy, `go test -cpuprofile`), `go tool trace` cho độ trễ và scheduler.
+> - Lỗi trên production: log có cấu trúc, metrics, tracing; không gắn debugger vào production.
+> - Bắt lỗi trước khi chạy: `go vet`, staticcheck.
+>
+> Ranh giới: Delve trên binary build tối ưu có thể thấy biến "optimized away"; build với `-gcflags="all=-N -l"` khi cần debug chi tiết.
+
+**Gặp lỗi trên production nhưng local không bị, làm gì?**
+> - **Môi trường**: mọi thứ quanh code ảnh hưởng hành vi: cấu hình, phiên bản phụ thuộc, dữ liệu, tải, mạng, quyền, múi giờ.
+> - **Observability**: khả năng hiểu hệ thống từ bên ngoài qua log, metrics, trace.
+>
+> Quy tắc: code giống nhau mà kết quả khác nhau thì *môi trường khác nhau*; việc cần làm là tìm điểm khác biệt. Kiểm tra lần lượt: phiên bản đang chạy có đúng commit nghĩ không; cấu hình và biến môi trường; dữ liệu (production có giá trị null, ký tự lạ, khối lượng lớn mà local không có); tải và đồng thời (race condition, cạn connection pool, timeout chỉ lộ khi đông); phụ thuộc ngoài (service khác, DB version, mạng chậm); múi giờ, locale. Dùng log, metrics, trace quanh thời điểm lỗi để khoanh vùng, rồi tái hiện ở local hoặc staging với điều kiện tương tự.
+>
+> Ranh giới: không debug bằng cách sửa thử thẳng trên production. Nếu lỗi đang ảnh hưởng người dùng, ưu tiên khôi phục (rollback, tắt tính năng) trước rồi mới tìm nguyên nhân. Thiếu log để trả lời câu hỏi thì việc đầu tiên sau sự cố là bổ sung log hay metric đó.
+
+**Đọc stack trace panic thế nào?**
+> - **Panic**: lỗi runtime làm goroutine dừng; nếu không được recover thì chương trình in thông báo và stack trace rồi thoát.
+> - **Stack trace**: danh sách các lời gọi hàm đang dở tại thời điểm lỗi, hàm gần nhất ở trên cùng.
+>
+> Cách đọc: dòng đầu là *loại lỗi* (`panic: runtime error: invalid memory address or nil pointer dereference`, `index out of range [5] with length 3`). Tiếp theo là `goroutine N [running]:` và các cặp dòng: tên hàm, rồi `đường/dẫn/file.go:dòng`. Đọc từ trên xuống, tìm *frame đầu tiên thuộc code của mình* (bỏ qua frame trong `runtime/` và thư viện), đó là chỗ lỗi lộ ra; các frame bên dưới cho biết đường đi dẫn tới đó.
+>
+> Ranh giới: chỗ panic là triệu chứng; nguyên nhân thường ở nơi tạo ra giá trị sai (biến nil được trả về từ đâu đó trước đó). Khi chương trình in nhiều goroutine (deadlock, `kill -QUIT`), tìm goroutine ở trạng thái `[running]` hoặc các goroutine cùng chờ một thứ. Ví dụ đọc mẫu ở phần *Đọc panic và stack trace Go* của file này.
+
+**Service bị chậm dần/tốn RAM dần, nghi ngờ gì?**
+> - **Memory leak**: bộ nhớ không còn cần dùng nhưng không được giải phóng. Trong Go có GC, nên "leak" là bộ nhớ *vẫn còn được tham chiếu* ngoài ý muốn.
+> - **Resource leak**: tài nguyên (goroutine, kết nối, file descriptor) được mở mà không bao giờ đóng.
+>
+> Quy tắc: thứ gì *tăng theo thời gian chạy* mà không giảm là thứ đang được tạo mà không được giải phóng. Nghi phạm thường gặp: goroutine bị chặn mãi (chờ channel không ai gửi, không có timeout/context); `rows.Close()` hay response body không đóng làm rò kết nối; cache hoặc map toàn cục lớn dần không giới hạn; slice nhỏ cắt từ mảng lớn giữ cả mảng; `time.After` trong vòng lặp dài (giữ timer); `defer` trong vòng lặp. Chậm dần thường đi kèm: GC chạy nhiều hơn vì heap lớn, pool cạn nên request phải chờ.
+>
+> Cách xác nhận: theo dõi metric số goroutine, heap, số kết nối, file descriptor theo thời gian; so sánh hai lần chụp heap profile và goroutine profile bằng pprof (`go tool pprof -base`) để thấy thứ gì tăng. Ranh giới: RAM của process tăng rồi đứng yên ở một mức có thể là bình thường (runtime giữ bộ nhớ để dùng lại); chỉ đáng lo khi tăng không dừng.
 
 ## Liên quan
 - [01-operating-systems.md](01-operating-systems.md): lệnh Linux xem process, tài nguyên.

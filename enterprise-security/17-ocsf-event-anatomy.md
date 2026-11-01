@@ -127,7 +127,7 @@ Một alert EDR đã chuẩn hóa (rút gọn):
 
 Ghép lại: *"08:00, winword.exe (lan.nguyen) trên laptop WS-0412 của phòng Tài chính (criticality High) sinh PowerShell mã hóa (T1059.001); EDR đã chặn. Alert High, chưa xử lý."*
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Một event OCSF trả lời các thông tin "ai, làm gì, khi nào, ở đâu, kết quả ra sao" như thế nào?**
 Mỗi câu hỏi có một nhóm field cố định, và nhóm đó có mặt trong mọi class vì đến từ base event, category hoặc profile. Câu hỏi về *đối tượng* thì nằm trong object riêng của class. Bảng ở *Cách hoạt động* là bản đồ đầy đủ: loại ở `type_uid`, thời điểm ở `time`, kết quả ở `status_id`/`disposition_id`, chủ thể ở `actor`, nơi xảy ra ở `device` và `src_endpoint`/`dst_endpoint`. Một field trống nghĩa là nguồn không cung cấp hoặc mapping không điền, tức là "không biết", không phải "không xảy ra".

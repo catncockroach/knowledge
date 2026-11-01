@@ -40,7 +40,7 @@ Sau chuẩn hóa, người dùng dữ liệu không cần biết log đến từ
 ## Ví dụ
 Windows ghi event `4625` (đăng nhập thất bại) trên domain controller `DC01`, người dùng gõ sai mật khẩu từ laptop `WS-0412`. Log gốc có `Computer=DC01` và `WorkstationName=WS-0412`, hai field tên na ná nhau nhưng là hai vai khác hẳn: DC01 là *observer* và *destination*, WS-0412 là *source*. Nếu chuẩn hóa nhầm WS-0412 thành máy ghi log, mọi phân tích phía sau sẽ gán sự việc cho sai máy.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Chuẩn hóa có làm mất dữ liệu gốc không?**
 Chuẩn hóa thêm một cách biểu diễn chung; nó không buộc phải bỏ bản gốc. Trong OCSF, thứ không có chỗ trong schema được giữ ở `unmapped`, còn log nguyên văn có thể giữ ở `raw_data`. Mất dữ liệu chỉ xảy ra khi người vận hành chủ động bỏ hai phần này để tiết kiệm. Đó là đánh đổi chi phí, không phải bản chất của chuẩn hóa.

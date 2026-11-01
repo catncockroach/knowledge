@@ -20,7 +20,7 @@ You write the stable, core knowledge of a field so the repo owner can learn or r
 - Foundations are stable knowledge. Explain mechanisms and the reasons behind them, and leave out versions, vendors and news that age quickly.
 - **Knowledge, not a build plan.** Describe what things are, what they are for and how they work. Leave out deployment advice ("nên làm…"), pipeline designs, queries and configs: the owner reads those as an implementation proposal, not domain knowledge. A short illustrative snippet is fine when it shows a concept. "When to use A or B" is answered as the criterion that tells them apart, not as a recommendation.
 - **Every component has a purpose.** For each concept, component or field the domain defines, state both *what it is* and *what it is used for* (**Là gì / Dùng để**). A definition without its purpose is the most common gap.
-- **Questions drive the content.** Each file answers the questions a learner would ask about its topic, and each answer starts from the **general rule** that covers the whole class of such questions, then applies it to the case asked. See [references/learner-questions.md](references/learner-questions.md).
+- **Questions drive the content.** Each file answers the questions a learner would ask about its topic. Each answer first explains, briefly, every concept the question names, then gives the **general rule** that covers the whole class of such questions, then applies it to the case asked. The bold question stands on its own line; the answer starts on the next line as a `>` blockquote, never on the same line as the question. See [references/learner-questions.md](references/learner-questions.md).
 
 ## 1. Frame the domain
 
@@ -46,14 +46,14 @@ Write each file with the template in [references/file-template.md](references/fi
 
 - Teach the "why" and the mechanism, then the vocabulary. A reader should be able to rebuild the idea, not just recite it.
 - Give every component a **Là gì** and a **Dùng để**, in prose or in a table.
-- Answer the file's question list in the *Câu hỏi và trả lời* section: general rule first, then the asked case, then the boundary (when the rule bends, or what people confuse it with). Verify each general rule against the official spec or docs before stating it, since a wrong invariant misleads more than a wrong example. A local clone of the spec's official repository counts as the spec. If the spec is unreachable, a reputable secondary source that quotes it is acceptable; name the rules verified that way when you deliver.
+- Answer the file's question list in the *Câu hỏi* section, in the format of [references/learner-questions.md](references/learner-questions.md): the concepts the question names (what each is and is for), then the general rule, then the asked case, then the boundary (when the rule bends, or what people confuse it with). A bare one-line answer, or a question with no answer, is not done. Verify each general rule against the official spec or docs before stating it, since a wrong invariant misleads more than a wrong example. A local clone of the spec's official repository counts as the spec. If the spec is unreachable, a reputable secondary source that quotes it is acceptable; name the rules verified that way when you deliver.
 - Use concrete examples (a real packet, a real command, a worked number) in preference to abstract definitions.
 - Cross-link related files with relative links. Link to concepts a file relies on that live in earlier files.
 - Add a diagram (ASCII or a Mermaid block) where structure or flow matters.
 - Check facts you are not certain of (numbers, port values, header fields, dates) with WebSearch/WebFetch before writing them. Prefer standards (RFCs, IEEE, ISO) and official docs. If you cannot verify a figure, leave it out.
 - Keep each file focused: readable in one sitting.
 
-Done when every file in the outline exists, follows the template, and answers every question on its list with a general rule first.
+Done when every file in the outline exists, follows the template, and answers every question on its list in a blockquote, concepts first, then the general rule.
 
 ## 4. Write the README
 
@@ -65,7 +65,7 @@ Use the template in [references/readme-template.md](references/readme-template.m
 python3 ${CLAUDE_SKILL_DIR}/scripts/check.py <domain>
 ```
 
-It checks that every `.md` file is listed in the README and vice versa, that file names are English kebab-case, and that relative links resolve. It also warns when a topic file has no `## Câu hỏi và trả lời` section. Fix every error and every warning on files you wrote, and re-run until it exits 0 with no warning for them. Warnings on older files you did not touch are a backlog to mention, not to fix unasked.
+It checks that every `.md` file is listed in the README and vice versa, that file names are English kebab-case, and that relative links resolve. It also warns when a topic file has no `## Câu hỏi` section, and when a question in it has no answer or its answer sits on the question's line or is not a `>` blockquote. Fix every error and every warning on files you wrote, and re-run until it exits 0 with no warning for them. Warnings on older files you did not touch are a backlog to mention, not to fix unasked.
 
 ## 6. Deliver
 

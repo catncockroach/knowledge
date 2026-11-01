@@ -253,15 +253,75 @@ sequenceDiagram
 - **"PUT và POST thay nhau được"**: PUT idempotent và thay thế toàn bộ tài nguyên ở URL chỉ định; POST thì không idempotent.
 - **"Stateless nghĩa là không có dữ liệu"**: stateless là instance không giữ trạng thái phiên trong RAM riêng; dữ liệu vẫn nằm ở DB/cache dùng chung.
 
-## Câu hỏi ôn tập
-1. **Chuyện gì xảy ra khi gõ URL vào trình duyệt?** DNS → TCP → TLS → HTTP request → LB → app → DB/cache → response → trình duyệt render.
-2. **REST là gì? Thế nào là API RESTful tốt?** Thiết kế quanh tài nguyên, URL danh từ, dùng đúng method và status code, stateless, có versioning và phân trang.
-3. **Idempotent là gì, method nào idempotent?** Gọi nhiều lần cùng kết quả; GET, PUT, DELETE.
-4. **Monolith vs microservices?** Xem bảng; nêu được đánh đổi và khi nào chọn cái nào.
-5. **Load balancer làm gì?** Chia tải, health check, cho phép scale ngang và chịu lỗi.
-6. **Vì sao chia handler / service / repository?** Tách trách nhiệm, dễ test bằng mock, đổi hạ tầng không ảnh hưởng nghiệp vụ.
-7. **TCP khác UDP?** TCP tin cậy, có thứ tự, có kết nối; UDP nhanh, không đảm bảo.
-8. **Docker khác máy ảo?** Container dùng chung kernel host, nhẹ, khởi động nhanh; VM có kernel riêng.
+## Câu hỏi
+
+**Chuyện gì xảy ra khi gõ URL vào trình duyệt?**
+> - **DNS**: hệ thống đổi tên miền (`shop.example.com`) thành địa chỉ IP.
+> - **TCP / TLS**: TCP thiết lập kết nối tin cậy giữa hai máy; TLS mã hóa kết nối đó (HTTPS).
+> - **Load balancer (LB)**: máy đứng trước nhiều server, chia request cho chúng.
+>
+> Quy tắc: request đi qua lần lượt các tầng, mỗi tầng giải một bài toán riêng: *tìm* máy (DNS), *nối* tới máy (TCP), *bảo mật* kênh (TLS), *nói chuyện* (HTTP), *phân phối* (LB), *xử lý* (app gọi cache/DB), rồi *hiển thị* (trình duyệt parse HTML, tải thêm CSS/JS/ảnh, render).
+>
+> Chuỗi cụ thể: trình duyệt tra cache DNS → hỏi DNS resolver → có IP → bắt tay TCP (3-way handshake) → bắt tay TLS, kiểm certificate → gửi `GET /` → LB chọn một instance app → handler → service → repository đọc cache hoặc DB → trả response kèm status code → trình duyệt render.
+>
+> Ranh giới: nhiều bước bị bỏ qua nhờ cache (DNS cache, kết nối keep-alive, CDN trả luôn file tĩnh). Câu hỏi này dùng để kiểm tra bạn nối được các tầng với nhau; trả lời theo thứ tự tầng là đủ, sau đó đào sâu tầng mình hiểu nhất.
+
+**REST là gì? Thế nào là API RESTful tốt?**
+> - **REST**: phong cách thiết kế API trên HTTP, coi mọi thứ là *tài nguyên* (resource) có URL, và thao tác lên tài nguyên bằng các HTTP method chuẩn.
+> - **Stateless**: mỗi request tự mang đủ thông tin (vd token), server không nhớ trạng thái phiên giữa các request.
+>
+> API RESTful tốt dùng đúng ngữ nghĩa có sẵn của HTTP thay vì tự đặt quy ước riêng: URL là danh từ số nhiều (`/orders/42`, không phải `/getOrder?id=42`); method nói hành động (GET đọc, POST tạo, PUT thay toàn bộ, PATCH sửa một phần, DELETE xóa); status code nói kết quả (200, 201 Created, 400, 401, 403, 404, 409, 500); có versioning (`/v1/`), phân trang, lọc, sắp xếp cho danh sách; lỗi trả về theo một format thống nhất.
+>
+> Ranh giới: stateless giúp scale ngang dễ, vì bất kỳ instance nào cũng xử lý được request. Không phải hành động nào cũng là CRUD; thao tác như "hủy đơn" thường mô hình hóa thành sub-resource (`POST /orders/42/cancel`) hoặc đổi trạng thái (`PATCH status`). gRPC và GraphQL là các lựa chọn khác, không theo REST.
+
+**Idempotent là gì, method nào idempotent?**
+> - **Idempotent**: gọi một thao tác một lần hay nhiều lần thì *trạng thái server* sau cùng vẫn như nhau.
+> - **Safe method**: method không làm thay đổi trạng thái server (chỉ đọc).
+>
+> Theo chuẩn HTTP: GET, HEAD, OPTIONS là safe nên idempotent; PUT và DELETE không safe nhưng idempotent (đặt tài nguyên thành giá trị X hai lần vẫn là X, xóa hai lần vẫn là đã xóa); POST và PATCH không đảm bảo idempotent (POST tạo đơn hai lần ra hai đơn). Ý nghĩa thực tế: client, proxy được phép tự *retry* method idempotent khi mạng lỗi mà không gây hậu quả.
+>
+> Ranh giới: idempotent nói về trạng thái, không về response: DELETE lần hai có thể trả 404 nhưng vẫn idempotent. Với thao tác không idempotent như thanh toán, API thường nhận `Idempotency-Key` từ client để server nhận ra request lặp và không xử lý hai lần.
+
+**Monolith vs microservices?**
+> - **Monolith**: toàn bộ ứng dụng là một codebase, build và deploy thành một khối.
+> - **Microservices**: ứng dụng chia thành nhiều service nhỏ, mỗi service một nghiệp vụ, deploy độc lập, giao tiếp qua mạng (HTTP, gRPC, message queue), thường có DB riêng.
+>
+> Tiêu chí quyết định là *đánh đổi giữa độc lập và độ phức tạp*. Microservices cho từng team deploy, scale, chọn công nghệ độc lập, lỗi một service ít lan sang service khác; cái giá là gọi qua mạng (chậm, có thể lỗi), dữ liệu phân tán (khó transaction), cần hạ tầng vận hành (service discovery, tracing, CI/CD nhiều pipeline). Monolith đơn giản, gọi hàm trực tiếp, transaction dễ, phù hợp team nhỏ, sản phẩm mới.
+>
+> Ranh giới: microservices là lời giải cho vấn đề *tổ chức* (nhiều team dẫm chân nhau) nhiều hơn là vấn đề kỹ thuật. Chia sai ranh giới tạo "distributed monolith": nhiều service nhưng phải deploy cùng nhau. Nhiều hệ thống bắt đầu bằng modular monolith (một khối nhưng chia module rõ) rồi mới tách dần.
+
+**Load balancer làm gì?**
+> - **Load balancer**: thành phần nhận request rồi phân phối cho một nhóm server phía sau (backend pool).
+> - **Health check**: LB định kỳ gọi thử từng server để biết server nào còn sống.
+>
+> LB cho phép *scale ngang* (thêm server để chịu thêm tải) và *chịu lỗi* (server chết bị loại khỏi pool, client không thấy). Nó chọn server theo thuật toán: round robin, least connections, hash theo IP hay key. LB tầng 4 chia theo kết nối TCP/UDP; LB tầng 7 hiểu HTTP nên định tuyến được theo path, header, và thường kiêm TLS termination.
+>
+> Ranh giới: muốn LB chia request tự do thì app phải stateless; nếu lưu session trong RAM của server thì phải dùng sticky session hoặc chuyển session ra Redis. Bản thân LB cũng có thể là điểm lỗi duy nhất, nên thường chạy theo cặp hoặc dùng dịch vụ LB của cloud.
+
+**Vì sao chia handler / service / repository?**
+> - **Handler**: tầng nhận HTTP request, parse và validate input, gọi service, trả response.
+> - **Service**: tầng chứa logic nghiệp vụ (quy tắc, tính toán), không biết HTTP hay SQL.
+> - **Repository**: tầng truy cập dữ liệu, che giấu DB cụ thể sau một interface.
+>
+> Quy tắc: mỗi tầng chỉ có *một lý do để thay đổi* và chỉ phụ thuộc vào tầng dưới qua interface. Nhờ vậy đổi PostgreSQL sang MySQL chỉ sửa repository; thêm gRPC bên cạnh HTTP chỉ thêm handler; logic nghiệp vụ test được bằng repository giả (mock/fake) mà không cần DB.
+>
+> Ranh giới: không có tầng nào được "nhảy cóc" (handler gọi thẳng SQL) hoặc rò chi tiết (service trả `sql.Rows`). Với chương trình rất nhỏ, ba tầng có thể là thừa; đây là áp dụng của Single Responsibility và Dependency Inversion, xem [08-clean-code-and-solid.md](08-clean-code-and-solid.md).
+
+**TCP khác UDP?**
+> - **TCP**: giao thức tầng transport có kết nối, đảm bảo dữ liệu tới đủ, đúng thứ tự, không trùng.
+> - **UDP**: giao thức transport không kết nối, gửi từng gói độc lập, không đảm bảo gì.
+>
+> Tiêu chí chọn: cần *đúng và đủ* thì dùng TCP; cần *nhanh, độ trễ thấp* và chấp nhận mất một ít thì dùng UDP. TCP đạt độ tin cậy nhờ bắt tay 3 bước, số thứ tự, ACK và gửi lại, điều khiển luồng và tắc nghẽn, cái giá là độ trễ thêm. HTTP/1.1, HTTP/2, database, SSH dùng TCP; DNS, video call, game, streaming dùng UDP.
+>
+> Ranh giới: UDP không có nghĩa là ứng dụng không tin cậy; ứng dụng có thể tự làm tin cậy trên UDP, như QUIC (nền của HTTP/3) làm lại các tính năng của TCP trên UDP. Kiến thức mạng sâu hơn ở domain [internet](../internet/README.md).
+
+**Docker khác máy ảo?**
+> - **Máy ảo (VM)**: máy tính giả lập bởi hypervisor, có hệ điều hành khách và kernel riêng.
+> - **Container**: process được cô lập (bằng namespace và cgroup của Linux), chạy chung kernel với máy host. **Docker** là công cụ phổ biến để build và chạy container.
+>
+> Khác biệt gốc là *ranh giới ảo hóa*: VM ảo hóa phần cứng, container ảo hóa hệ điều hành. Vì không cần boot kernel riêng, container khởi động trong khoảng giây, image chỉ vài chục MB, một máy chạy được nhiều container. Image đóng gói app cùng thư viện, nên "chạy được trên máy tôi" thì chạy được mọi nơi.
+>
+> Ranh giới: container cô lập yếu hơn VM (chung kernel, lỗ hổng kernel ảnh hưởng tất cả), và không chạy được hệ điều hành khác kernel host (container Linux trên Mac/Windows thực ra chạy trong một VM Linux nhỏ). Trên cloud, container thường chạy *bên trong* VM: hai thứ kết hợp chứ không loại trừ nhau.
 
 ## Liên quan
 - [01-operating-systems.md](01-operating-systems.md): service là một process trên OS.
