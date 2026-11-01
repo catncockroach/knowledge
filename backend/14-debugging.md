@@ -136,7 +136,7 @@ Bug: tổng tiền sai lệch vài đồng. Breakpoint ở hàm tính tổng, wa
 - **"Lỗi chập chờn là do máy/mạng"**: lỗi không ổn định thường là race condition, timeout, phụ thuộc thứ tự hay dữ liệu cụ thể. Chạy `-race`, log nhiều ngữ cảnh hơn.
 - **"Thay nhiều thứ cùng lúc cho nhanh"**: khi hết lỗi bạn không biết thay đổi nào có tác dụng.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Quy trình debug của bạn?**
 > - **Bug**: chênh lệch giữa hành vi mong đợi và hành vi thực tế của chương trình.

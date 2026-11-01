@@ -261,7 +261,7 @@ if errors.Is(err, fs.ErrNotExist) {
 - **"Map duyệt theo thứ tự chèn"**: thứ tự ngẫu nhiên; cần thứ tự thì lấy key ra, sort rồi duyệt.
 - **"`defer` trong vòng lặp đóng tài nguyên sau mỗi vòng"**: defer chỉ chạy khi hàm return; mở 10.000 file trong vòng lặp với defer sẽ giữ cả 10.000 file. Tách thân vòng lặp ra hàm riêng.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Array khác slice?**
 > - **Array**: dãy phần tử có độ dài cố định, độ dài là một phần của kiểu (`[3]int` khác `[4]int`).

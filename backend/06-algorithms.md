@@ -260,7 +260,7 @@ Ví dụ backend: lấy 10 sản phẩm bán chạy nhất trong 1 triệu bản
 - **"Binary search dùng cho mọi mảng"**: chỉ đúng trên mảng đã sắp xếp.
 - **"Space complexity tính cả input"**: thường chỉ tính bộ nhớ phụ; đệ quy tốn bộ nhớ stack theo độ sâu.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Big-O là gì? Vì sao bỏ hằng số?**
 > - **Độ phức tạp thời gian**: số bước thuật toán thực hiện, biểu diễn theo kích thước đầu vào n.

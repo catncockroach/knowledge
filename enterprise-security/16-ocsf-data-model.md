@@ -125,7 +125,7 @@ Agent EDR trên máy Linux `srv-web-01` chặn tiến trình `curl` (chạy vớ
 
 Một sự việc, một class, ba profile, một extension. Truy vấn theo `class_uid = 4001` lấy được event này cùng mọi kết nối mạng khác; truy vấn theo `security_control ∈ metadata.profiles` lấy được nó cùng mọi phán quyết control ở class khác (file bị AV chặn, đăng nhập bị từ chối...).
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Một log OCSF có thể thể hiện nhiều class hay chỉ một class?**
 Mỗi event OCSF là instance của đúng một class, nên có đúng một `class_uid`, một `activity_id`, một `type_uid` và một `category_uid` (mỗi class chỉ thuộc một category); ngược lại, số profile và số extension của một event là từ 0 đến nhiều. OCSF thiết kế để mọi event nguồn map vào *một* class nhờ ghép thành phần thay vì đa kế thừa: khía cạnh thứ hai của sự việc được thêm bằng profile. Vì vậy một lần mở file bị antivirus chặn là *một* File System Activity áp `security_control`, không phải File System Activity cộng thêm một class "malware"; kết nối bị EDR chặn trong [ví dụ](#ví-dụ) là một Network Activity với ba profile. Điều dễ nhầm: profile cũng là một trục phân loại (event "là một" event của security control), nên tìm theo profile ra được event của nhiều class, nhưng bản thân mỗi event vẫn chỉ có một class.

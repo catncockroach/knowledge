@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 NAME = re.compile(r"^(\d{2}-)?[a-z0-9]+(-[a-z0-9]+)*\.md$")
-QA = "## Câu hỏi và trả lời"
+QA = "## Câu hỏi"
 LINK = re.compile(r"\[[^\]]*\]\(([^)#\s]+)(?:#[^)]*)?\)")
 QUESTION = re.compile(r"^(\d+\.\s+)?\*\*(.+?)\*\*(.*)$")
 

@@ -232,7 +232,7 @@ Chu trình **Red → Green → Refactor**: viết test thất bại trước (re
 - **"Mock càng nhiều càng tốt"**: mock quá chi tiết (kiểm tra từng lời gọi nội bộ) làm test gãy mỗi lần refactor dù hành vi không đổi. Test hành vi đầu ra, không test cách cài đặt.
 - **"Test chỉ cần happy path"**: bug thường nằm ở ca biên và luồng lỗi.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Unit test là gì? Khác integration test, E2E?**
 > - **Unit test**: kiểm tra một đơn vị nhỏ (hàm, method, kiểu) *tách biệt* khỏi phụ thuộc bên ngoài như DB, mạng, file.

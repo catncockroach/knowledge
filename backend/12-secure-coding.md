@@ -164,7 +164,7 @@ func (r *OrderRepo) FindForUser(ctx context.Context, orderID, userID int64) (Ord
 - **"Dùng HTTPS là ứng dụng an toàn"**: HTTPS chỉ bảo vệ đường truyền; SQL injection, IDOR vẫn xảy ra.
 - **"Escape input khi lưu"**: lưu dữ liệu nguyên gốc; escape khi **xuất** theo đúng ngữ cảnh (HTML, SQL qua placeholder, shell).
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **SQL injection là gì? Cách phòng?**
 > - **Injection**: lớp lỗ hổng khi dữ liệu không tin cậy bị trình thông dịch (SQL, shell, HTML) hiểu thành *lệnh*.

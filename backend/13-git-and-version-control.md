@@ -153,7 +153,7 @@ git bisect reset
 - **"Rebase lúc nào cũng tốt vì lịch sử đẹp"**: rebase branch đã chia sẻ làm lệch lịch sử của người khác.
 - **"Xóa file khỏi commit mới nhất là secret không còn"**: nó vẫn trong lịch sử và trong bản clone của người khác.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Git khác SVN?**
 > - **Version control (quản lý phiên bản)**: hệ thống ghi lại lịch sử thay đổi của code, cho nhiều người làm chung và quay lại phiên bản cũ.

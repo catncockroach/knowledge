@@ -100,7 +100,7 @@ Hồ sơ của `WS-0412` sau khi gập dữ liệu một tháng:
 
 Không event nào chứa cả hồ sơ này. Mỗi dòng trên là kết quả gập hàng trăm đến hàng nghìn event.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Asset profile có nằm trong event OCSF không?**
 Không. Event chỉ mang các *mảnh* thông tin về tài sản tại một thời điểm. Profile là trạng thái được gập từ nhiều event và nguồn khai báo, lưu riêng, rồi có thể gắn ngược vào event dưới dạng ngữ cảnh. Một event OCSF chứa `device.hostname` và `device.ip` của lúc đó. Hồ sơ "máy này của ai, thấy lần đầu khi nào, những nguồn nào thấy nó" chỉ có sau khi gập. Ranh giới: event Device Inventory Info (`5001`) trông giống bản ghi tài sản, nhưng vẫn là *ảnh chụp có thời điểm* từ một nguồn, chưa phải profile hợp nhất.

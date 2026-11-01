@@ -37,7 +37,7 @@ Test: if the reader changed the example in the question (another class, another 
 
 ## Format in the file
 
-In the *Câu hỏi và trả lời* section of each topic file, the question stands alone on its own bold line. The answer starts on the **next line**, never on the same line as the question (not `**Câu hỏi?** trả lời`, not `1. **Câu hỏi?** trả lời`), and the whole answer is a blockquote.
+In the *Câu hỏi* section of each topic file, the question stands alone on its own bold line. The answer starts on the **next line**, never on the same line as the question (not `**Câu hỏi?** trả lời`, not `1. **Câu hỏi?** trả lời`), and the whole answer is a blockquote.
 
 ```markdown
 **<Câu hỏi, viết như người học hỏi>?**

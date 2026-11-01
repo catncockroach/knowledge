@@ -265,7 +265,7 @@ Sửa: `make(chan int, 1)` để goroutine gửi được rồi thoát, hoặc t
 - **"Đọc biến dùng chung thì không cần lock"**: đọc đồng thời với một lần ghi vẫn là data race.
 - **"Bên nhận nên đóng channel"**: chỉ bên gửi biết khi nào hết dữ liệu; bên nhận đóng dễ gây panic ở bên gửi.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Concurrency khác parallelism?**
 > - **Concurrency (đồng thời)**: cách *cấu trúc* chương trình thành nhiều việc độc lập, tiến triển xen kẽ nhau.

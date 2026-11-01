@@ -135,7 +135,7 @@ Estimate: 3 story points.
 - **"Story point = số giờ"**: story point là ước lượng tương đối, không quy đổi cố định ra giờ.
 - **"Acceptance criteria và Definition of Done là một"**: AC riêng cho từng story; DoD chung cho mọi story.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Các giai đoạn của SDLC?**
 > - **SDLC (Software Development Life Cycle)**: chuỗi giai đoạn một phần mềm đi qua từ ý tưởng tới vận hành, giúp làm việc có kế hoạch và kiểm soát chất lượng.

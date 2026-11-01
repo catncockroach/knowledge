@@ -253,7 +253,7 @@ sequenceDiagram
 - **"PUT và POST thay nhau được"**: PUT idempotent và thay thế toàn bộ tài nguyên ở URL chỉ định; POST thì không idempotent.
 - **"Stateless nghĩa là không có dữ liệu"**: stateless là instance không giữ trạng thái phiên trong RAM riêng; dữ liệu vẫn nằm ở DB/cache dùng chung.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Chuyện gì xảy ra khi gõ URL vào trình duyệt?**
 > - **DNS**: hệ thống đổi tên miền (`shop.example.com`) thành địa chỉ IP.

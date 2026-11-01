@@ -194,7 +194,7 @@ type OrderRepo struct{ *BaseRepo }
 - **"Encapsulation = getter/setter cho mọi field"**: mục tiêu là bảo vệ invariant; setter tùy tiện phá vỡ chính điều đó.
 - **"Khai báo interface lớn trước ở phía implement"**: trong Go nên khai báo interface nhỏ ở nơi dùng nó, khi thật sự cần thay thế được.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Bốn tính chất của OOP là gì? Cho ví dụ.**
 > - **OOP (lập trình hướng đối tượng)**: cách tổ chức chương trình quanh các *object*, mỗi object gói dữ liệu và hành vi thao tác trên dữ liệu đó.

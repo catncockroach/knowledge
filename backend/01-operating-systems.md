@@ -167,7 +167,7 @@ srv.Shutdown(shutdownCtx) // ngừng nhận request mới, chờ request đang x
 - **"`write` xong là dữ liệu đã nằm trên đĩa"**: nó mới ở page cache, mất điện có thể mất. Cần `fsync`.
 - **"Concurrency = parallelism"**: concurrency là cấu trúc chương trình xử lý nhiều việc xen kẽ; parallelism là thật sự chạy cùng lúc trên nhiều core.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Process khác thread thế nào?**
 > - **Process**: một chương trình đang chạy, được OS cấp tài nguyên riêng: không gian địa chỉ (virtual memory), file descriptor, biến môi trường. Dùng để cô lập các chương trình với nhau.

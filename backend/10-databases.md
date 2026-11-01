@@ -256,7 +256,7 @@ for _, o := range orders {       // N query
 - **"Transaction là xong mọi race condition"**: ở Read Committed vẫn có lost update nếu đọc rồi ghi ở hai câu riêng; cần `FOR UPDATE`, optimistic locking hoặc update nguyên tử.
 - **"`DELETE` và `TRUNCATE` như nhau"**: `TRUNCATE` xóa toàn bộ nhanh, không chạy từng hàng, thường không lọc được bằng `WHERE` và có hành vi khác về trigger/rollback tùy DB.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **ACID là gì? Cho ví dụ.**
 > - **Transaction**: nhóm thao tác DB được xử lý như *một đơn vị*: hoặc tất cả thành công, hoặc như chưa có gì xảy ra.

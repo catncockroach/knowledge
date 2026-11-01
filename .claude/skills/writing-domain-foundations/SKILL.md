@@ -46,7 +46,7 @@ Write each file with the template in [references/file-template.md](references/fi
 
 - Teach the "why" and the mechanism, then the vocabulary. A reader should be able to rebuild the idea, not just recite it.
 - Give every component a **Là gì** and a **Dùng để**, in prose or in a table.
-- Answer the file's question list in the *Câu hỏi và trả lời* section, in the format of [references/learner-questions.md](references/learner-questions.md): the concepts the question names (what each is and is for), then the general rule, then the asked case, then the boundary (when the rule bends, or what people confuse it with). A bare one-line answer, or a question with no answer, is not done. Verify each general rule against the official spec or docs before stating it, since a wrong invariant misleads more than a wrong example. A local clone of the spec's official repository counts as the spec. If the spec is unreachable, a reputable secondary source that quotes it is acceptable; name the rules verified that way when you deliver.
+- Answer the file's question list in the *Câu hỏi* section, in the format of [references/learner-questions.md](references/learner-questions.md): the concepts the question names (what each is and is for), then the general rule, then the asked case, then the boundary (when the rule bends, or what people confuse it with). A bare one-line answer, or a question with no answer, is not done. Verify each general rule against the official spec or docs before stating it, since a wrong invariant misleads more than a wrong example. A local clone of the spec's official repository counts as the spec. If the spec is unreachable, a reputable secondary source that quotes it is acceptable; name the rules verified that way when you deliver.
 - Use concrete examples (a real packet, a real command, a worked number) in preference to abstract definitions.
 - Cross-link related files with relative links. Link to concepts a file relies on that live in earlier files.
 - Add a diagram (ASCII or a Mermaid block) where structure or flow matters.
@@ -65,7 +65,7 @@ Use the template in [references/readme-template.md](references/readme-template.m
 python3 ${CLAUDE_SKILL_DIR}/scripts/check.py <domain>
 ```
 
-It checks that every `.md` file is listed in the README and vice versa, that file names are English kebab-case, and that relative links resolve. It also warns when a topic file has no `## Câu hỏi và trả lời` section, and when a question in it has no answer or its answer sits on the question's line or is not a `>` blockquote. Fix every error and every warning on files you wrote, and re-run until it exits 0 with no warning for them. Warnings on older files you did not touch are a backlog to mention, not to fix unasked.
+It checks that every `.md` file is listed in the README and vice versa, that file names are English kebab-case, and that relative links resolve. It also warns when a topic file has no `## Câu hỏi` section, and when a question in it has no answer or its answer sits on the question's line or is not a `>` blockquote. Fix every error and every warning on files you wrote, and re-run until it exits 0 with no warning for them. Warnings on older files you did not touch are a backlog to mention, not to fix unasked.
 
 ## 6. Deliver
 

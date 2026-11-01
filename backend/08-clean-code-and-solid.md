@@ -233,7 +233,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 - **"SOLID chỉ dành cho OOP có class"**: SOLID áp dụng tốt cho Go qua package, struct và interface.
 - **"Convention là chuyện thẩm mỹ"**: convention giúp đọc nhanh, review nhanh, giảm bug; trong Go nó được công cụ kiểm tra tự động.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Giải thích từng chữ trong SOLID kèm ví dụ.**
 > - **SOLID**: năm nguyên tắc thiết kế hướng đối tượng, cùng mục tiêu giữ code *dễ thay đổi*: một thay đổi chỉ chạm ít chỗ và không làm vỡ chỗ khác.

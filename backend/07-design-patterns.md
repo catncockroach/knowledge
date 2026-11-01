@@ -277,7 +277,7 @@ func main() {
 - **"Adapter và Decorator giống nhau vì đều bọc object"**: Adapter đổi interface; Decorator giữ interface, thêm hành vi.
 - **"DI cần framework"**: DI chỉ là truyền dependency qua tham số; framework là tùy chọn.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Ba nhóm design pattern? Mỗi nhóm cho 2 ví dụ.**
 > - **Design pattern**: lời giải đã được đặt tên cho một vấn đề thiết kế lặp đi lặp lại; là ý tưởng, không phải đoạn code copy được.

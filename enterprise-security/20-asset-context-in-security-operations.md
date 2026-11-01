@@ -57,7 +57,7 @@ Hai alert cùng loại "PowerShell mã hóa", cùng severity High:
 
 Không có ngữ cảnh, hai alert xếp hàng như nhau. Có ngữ cảnh, B được xử lý ngay, phạm vi điều tra mở rộng sang các máy tài khoản đó từng đăng nhập, và việc cô lập máy được cân nhắc theo ảnh hưởng nghiệp vụ của máy chủ backup.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Severity khác priority thế nào?**
 Severity là thuộc tính của *sự việc* theo đánh giá của nguồn; priority là *quyết định của tổ chức* về thứ tự xử lý. Priority tổ hợp severity với criticality của tài sản, độ tin cậy của phát hiện và ngữ cảnh khác. Hai alert cùng severity vì thế có thể có priority rất khác nhau, như phần Ví dụ.

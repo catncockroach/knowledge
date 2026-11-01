@@ -19,7 +19,7 @@ Use this structure for each topic file. Section titles are in Vietnamese. Drop a
 ## Ví dụ
 <Một ví dụ cụ thể: gói tin, lệnh, phép tính có số liệu. Tên vendor, CA, phiên bản trong ví dụ dùng tên giả định để ví dụ không lỗi thời.>
 
-## Câu hỏi và trả lời
+## Câu hỏi
 <Ít nhất 4 câu người học sẽ hỏi, cộng mọi câu chủ repo đã hỏi (xem learner-questions.md). Mỗi câu: giải thích ngắn các khái niệm được nhắc tới, rồi quy tắc tổng quát, áp vào trường hợp được hỏi, cuối cùng là ranh giới. Câu hỏi đứng riêng một dòng; câu trả lời xuống dòng, nằm trong blockquote.>
 
 **<Câu hỏi>?**

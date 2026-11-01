@@ -179,7 +179,7 @@ _, exists := set["go"]
 - **"float đủ chính xác cho tiền"**: sai số làm tròn tích lũy; dùng số nguyên đơn vị nhỏ nhất hoặc decimal.
 - **"BST luôn O(log n)"**: chỉ khi cân bằng.
 
-## Câu hỏi và trả lời
+## Câu hỏi
 
 **Array khác linked list?**
 > - **Array**: các phần tử nằm *liên tiếp* trong bộ nhớ, truy cập bằng chỉ số.
