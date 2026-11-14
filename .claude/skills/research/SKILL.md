@@ -21,6 +21,15 @@ research/<YYYY-MM-DD>-<slug>/
 
 All output is in Vietnamese; technical terms, proper names and direct quotes stay in their original language.
 
+## 0. Branch
+
+Before writing any file, put the work on its own branch. Run `git branch --show-current` and check the branch's PR (any state):
+- The session or user designated a branch → stay on it.
+- On `main`, or on a branch made for other work (its name names another subject, or its PR is merged) → invoke the `naming-branches` skill with type **`research`** and the topic as slug, without the date: folder `research/2026-10-18-tac-dong-eu-ai-act-startup/` → branch `research/eu-ai-act-startup`. Never `docs/…-research`, `claude/…` or an auto-generated name.
+- Already on a `research/<slug>` branch for this topic with an open PR → keep it.
+
+Done when `git branch --show-current` prints the branch for this research.
+
 ## 1. Frame the brief
 
 The brief keeps the research **on target**: every researcher and the writer work from it, and step 6 measures the report against it.
