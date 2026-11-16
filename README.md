@@ -6,6 +6,7 @@ Kho kiến thức cá nhân: các ghi chú nghiên cứu, học tập, viết b�
 
 - [`backend/`](backend/README.md): kiến thức backend level entry để ôn phỏng vấn, ví dụ bằng Go (hệ điều hành, kiến trúc backend, Go, OOP, cấu trúc dữ liệu, thuật toán, design pattern, SOLID, concurrency, database, unit test, secure coding, Git, debug, Agile/Scrum).
 - [`data-analysis/`](data-analysis/README.md): kiến thức cơ sở về phân tích dữ liệu (thang đo, lấy mẫu, làm sạch, biến đổi, thống kê mô tả và suy luận, kiểm định, hồi quy, A/B test, chuỗi thời gian, funnel/cohort).
+- [`devops/`](devops/README.md): kiến thức nền tảng DevOps level entry (văn hoá và DORA, Linux cho ops, mạng, container/Docker, Kubernetes, cloud, Terraform/IaC, CI/CD và GitOps, chiến lược deploy, monitoring/observability, SRE và incident, HA/DR, DevSecOps).
 - [`enterprise-security/`](enterprise-security/README.md): kiến thức cơ sở về an ninh thông tin doanh nghiệp (rủi ro, tấn công, SIEM, SOC, detection engineering, incident response, SOAR/XDR, chuẩn hóa dữ liệu và OCSF, asset management, ngữ cảnh tài sản).
 - [`internet/`](internet/README.md): kiến thức cơ sở cốt lõi về mạng máy tính (các tầng OSI/TCP-IP, IP, routing, TCP/UDP, DNS, HTTP, bảo mật, công cụ chẩn đoán).
 - [`stream-processing/`](stream-processing/README.md): kiến thức nền tảng để xây engine xử lý dữ liệu realtime trên Kafka (mô hình log, consumer group, rebalance, delivery semantics, idempotency, retry/DLQ, song song và thứ tự, backpressure, event time và window, state và join, schema, vận hành, kiến trúc engine và framework), ví dụ bằng Go.
