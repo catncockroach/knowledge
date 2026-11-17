@@ -16,6 +16,10 @@ Khi được yêu cầu research một đề tài hay câu hỏi, dùng skill `r
 
 Khi được yêu cầu viết kiến thức cơ sở, cốt lõi hay nền tảng của một ngành, dùng skill `writing-domain-foundations`. Mỗi domain là một thư mục ở gốc repo (tên tiếng Anh, vd `internet/`), gồm các file `NN-<topic>.md` tên tiếng Anh với nội dung tiếng Việt, và một `README.md` tổng quan có mục lục kèm ý nghĩa từng file.
 
+## Branch
+
+Mỗi việc nằm trên một branch riêng, đặt tên bằng skill `naming-branches` (`<type>/<slug>` tiếng Anh, kebab-case) trước khi sửa file đầu tiên, khi đang ở `main`, ở branch của việc khác, hoặc ở branch có PR đã merge. Research dùng `research/<slug>`, viết domain dùng `notes/<domain>-foundations`, sửa skill dùng `skill/<name>`. Không dùng `claude/…`, `docs/…-research` hay tên tự sinh; chỉ giữ nguyên tên khi session hoặc chủ repo đã chỉ định branch.
+
 ## Commit
 
 Mỗi khi tạo commit, dùng skill `commit`: subject `brief title: detail` viết thường toàn bộ (brief title tự do, vài từ), vài dòng `- ` mô tả, kết thúc bằng trailer `Co-Authored-By` của agent, trong cloud session (`CLAUDE_CODE_REMOTE=true`) thêm dòng `Co-Authored-By: catncockroach <hai.hv04@gmail.com>`, và không có trailer nào khác (không `Claude-Session`, không link session). Làm xong một việc có thay đổi file thì tự commit, push lên branch đang làm và tạo (hoặc cập nhật) PR, không cần hỏi. Không tự merge PR; chủ repo merge. Mô tả PR cũng không chứa link session.

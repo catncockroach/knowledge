@@ -22,6 +22,15 @@ You write the stable, core knowledge of a field so the repo owner can learn or r
 - **Every component has a purpose.** For each concept, component or field the domain defines, state both *what it is* and *what it is used for* (**Là gì / Dùng để**). A definition without its purpose is the most common gap.
 - **Questions drive the content.** Each file answers the questions a learner would ask about its topic. Each answer first explains, briefly, every concept the question names, then gives the **general rule** that covers the whole class of such questions, then applies it to the case asked. The bold question stands on its own line; the answer starts on the next line as a `>` blockquote, never on the same line as the question. See [references/learner-questions.md](references/learner-questions.md).
 
+## 0. Branch
+
+Before writing any file, put the work on its own branch. Run `git branch --show-current` and check the branch's PR (any state):
+- The session or user designated a branch → stay on it.
+- On `main`, or on a branch made for other work (its name names another subject, or its PR is merged) → invoke the `naming-branches` skill with type **`notes`** and the domain folder as slug: `internet/` → `notes/internet-foundations`; one new file in an existing domain → `notes/<domain>-<topic>`. Never `docs/…`, `claude/…` or an auto-generated name.
+- Already on a `notes/<slug>` branch for this domain with an open PR → keep it.
+
+Done when `git branch --show-current` prints the branch for this domain.
+
 ## 1. Frame the domain
 
 Adding or rewriting a single file in an existing domain is the same workflow, scaled down: read the README and the neighbouring files, write that file's question list (step 2), write it (step 3), keep its README row accurate (step 4), validate (step 5).

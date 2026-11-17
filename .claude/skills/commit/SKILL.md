@@ -71,8 +71,9 @@ Done when you can say in one line what each changed path is about.
 ## 2. Pick the branch and what goes in
 
 Before staging, make sure the commit lands on a branch whose PR can still take it. Look up the branch's PR state with the GitHub tool (list PRs whose head is this branch, any state):
-- On the default branch (`main`) → create a branch first. If the session or environment names a branch to work on, use that one; otherwise `git checkout -b claude/<short-topic-slug>`.
-- The branch's earlier PR is already **merged** → restart the branch from the latest default branch, keeping the working tree: `git fetch origin main && git checkout -B <branch> origin/main`. A merged PR cannot take new commits. If checkout refuses because `main` changed the same files, `git stash`, checkout, then `git stash pop` and resolve.
+- On the default branch (`main`) → create a branch first. If the session or environment names a branch to work on, use that one; otherwise invoke the `naming-branches` skill and create the name it gives (`research/…` for a research run, `notes/…` for a domain, `skill/…` for a skill; never `claude/…`). `git switch -c <name>` keeps the working tree.
+- The branch's earlier PR is already **merged** → a merged PR cannot take new commits. If the changes continue the same subject as the branch name, restart the branch from the latest default branch, keeping the working tree: `git fetch origin main && git checkout -B <branch> origin/main`. If they are about something else (a different research topic, domain or skill), do not reuse the name: invoke `naming-branches` and `git fetch origin main && git checkout -b <new-name> origin/main`. If checkout refuses because `main` changed the same files, `git stash`, checkout, then `git stash pop` and resolve.
+- On a branch made for other work (the name names another subject) whose PR is still open → do not pile unrelated changes onto it: create a new branch from `origin/main` with `naming-branches`, as above.
 - The branch has an **open** PR → commit on it; the push in step 4 updates that PR.
 
 Then pick the changes:

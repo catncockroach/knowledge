@@ -12,6 +12,8 @@ A branch name should tell the owner, at a glance in a PR list, what the work is 
 
 If the task, the user or the session setup names the branch to work on (for example "Develop on branch `ccr-...`"), **use that exact name**. Do not rename it, and do not push to a different one. This skill only applies when you are the one choosing a new name.
 
+**When:** at the start of a task, before the first file change, whenever the current branch is `main`, belongs to other work (its name names another subject), or has a merged PR. The `research`, `writing-domain-foundations` and `commit` skills call this skill at that point. A wrong type is the most common miss: a research run is `research/…`, not `docs/…-research`.
+
 ## 1. Name format
 
 ```
